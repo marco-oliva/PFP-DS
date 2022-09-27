@@ -34,9 +34,9 @@ extern "C" {
     #include<gsacak.h>
 }
 
-#include<dictionary.hpp>
-#include<parse.hpp>
-#include <wt.hpp>
+#include"dictionary.hpp"
+#include"parse.hpp"
+#include "wt.hpp"
 
 template<class wt_t = pfp_wt_custom>
 class pf_parsing{

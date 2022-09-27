@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
+set(CMAKE_MODULE_PATH "CMakeModules")
 
 # Set a default build type if none was specified
 # ------------------------------------------------------------------------------
@@ -52,4 +52,4 @@ endif()
 add_subdirectory(include)
 add_subdirectory(test)
 
-configure_file(${PROJECT_SOURCE_DIR}/pipeline/pfp_ds ${PROJECT_BINARY_DIR}/pfp_ds)
+configure_file(pipeline/pfp_ds ${PROJECT_BINARY_DIR}/pfp_ds)
