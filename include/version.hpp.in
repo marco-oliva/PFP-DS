@@ -1,0 +1,36 @@
+//
+//  version.hpp.in
+//
+//  Copyright 2020 Marco Oliva. All rights reserved.
+//
+
+#ifndef version_hpp
+#define version_hpp
+
+namespace vcfbwt
+{
+
+struct Version
+{
+  static constexpr char PFPDS_GIT_BRANCH[] = "@GIT_BRANCH@";
+  static constexpr char PFPDS_GIT_COMMIT_HASH[] = "@GIT_COMMIT_HASH@";
+  static constexpr std::size_t PFPDS_MAJOR = @VERSION_MAJOR@;
+  static constexpr std::size_t PFPDS_MINOR = @VERSION_MINOR@;
+  static constexpr std::size_t PFPDS_PATCH = @VERSION_PATCH@;
+  
+  static void print()
+  {
+      std::cout
+      << PFPDS_GIT_BRANCH << ":"
+      << PFPDS_GIT_COMMIT_HASH << ":"
+      << " "
+      << PFPDS_MAJOR << "." << PFPDS_MINOR << "." << PFPDS_PATCH
+      << std::endl;
+      
+      exit(0);
+  }
+};
+
+}
+
+#endif //version_hpp
