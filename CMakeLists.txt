@@ -172,7 +172,7 @@ if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
 
     message(STATUS "Building unit tests")
     add_executable(unit_tests tests/unit_tests.cpp)
-    target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak)
+    target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak divsufsort)
 
     enable_testing()
     add_test(NAME unit_tests COMMAND unit_tests)

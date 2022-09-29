@@ -1,19 +1,3 @@
-/* pfp-parse - prefix free parsing parse
-    Copyright (C) 2020 Massimiliano Rossi
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/ .
-*/
 /*!
    \file parse.hpp
    \brief parse.hpp define and build the prefix-free parse data structure.
@@ -25,13 +9,13 @@
 #ifndef _PFP_PARSE_HH
 #define _PFP_PARSE_HH
 
-#include <common.hpp>
+#include <utils.hpp>
 
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
-extern "C" {
-#include<gsacak.h>
-}
+
+namespace pfpds
+{
 
 // TODO: Extend it to non-integer alphabets
 class parse{
@@ -83,7 +67,6 @@ public:
         p.push_back(0); // this is the terminator for the sacak algorithm
         
         build(saP_flag_, isaP_flag_, lcpP_flag_, rmq_lcp_P_flag_);
-        
     }
     
     void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_){
@@ -92,7 +75,7 @@ public:
         if(saP_flag_){
             saP.resize(p.size());
             // suffix array of the parsing.
-            verbose("Computing SA of the parsing");
+            spdlog::info("Computing SA of the parsing");
             _elapsed_time(
             sacak_int(&p[0],&saP[0],p.size(),alphabet_size);
             );
@@ -101,7 +84,7 @@ public:
         assert(!isaP_flag_ || (saP_flag || saP_flag_) );
         if(isaP_flag_ && !isaP_flag){
             // inverse suffix array of the parsing.
-            verbose("Computing ISA of the parsing");
+            spdlog::info("Computing ISA of the parsing");
             _elapsed_time(
             {
             isaP.resize(p.size());
@@ -116,7 +99,7 @@ public:
         if(lcpP_flag_){
             lcpP.resize(p.size());
             // LCP array of the parsing.
-            verbose("Computing LCP of the parsing");
+            spdlog::info("Computing LCP of the parsing");
             _elapsed_time(
             LCP_array(&p[0], isaP, saP, p.size(), lcpP);
             );
@@ -126,7 +109,7 @@ public:
         assert(!rmq_lcp_P_flag_ || (lcpP_flag || lcpP_flag_));
         if(rmq_lcp_P_flag_ && ! rmq_lcp_P_flag){
             rmq_lcp_P_flag = true;
-            verbose("Computing RMQ over LCP of the parsing");
+            spdlog::info("Computing RMQ over LCP of the parsing");
             // Compute the LCP rank of P
             _elapsed_time(
             rmq_lcp_P = sdsl::rmq_succinct_sct<>(&lcpP);
@@ -188,5 +171,7 @@ public:
     }
     
 };
+
+}
 
 #endif /* end of include guard: _PFP_PARSE_HH */

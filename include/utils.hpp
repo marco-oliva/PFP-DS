@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include <unistd.h>
-#include <math.h>
+#include <cmath>
 
 #include <spdlog/spdlog.h>
 
@@ -177,10 +177,34 @@ void gsacak_templated<uint32_t> (uint32_t *s, uint_t *SA, int_t *LCP, int_da *DA
 
 
 template<typename T>
-void read_file(const char *filename, std::vector<T>& ptr){
+void read_file(const char *filename, T*& ptr, size_t& length){
     struct stat filestat;
     FILE* fd;
     
+    if ((fd = fopen(filename, "r")) == nullptr)
+        spdlog::error("open() file " + std::string(filename) + " failed" );
+
+    int fn = fileno(fd);
+    if (fstat(fn, &filestat) < 0)
+        spdlog::error("stat() file " + std::string(filename) + " failed" );
+
+    if(filestat.st_size % sizeof(T) != 0)
+        spdlog::error("invilid file " + std::string(filename));
+
+    length = filestat.st_size / sizeof(T);
+    ptr = new T[length];
+
+    if ((fread(ptr, sizeof(T), length, fd)) != length)
+        spdlog::error("fread() file " + std::string(filename) + " failed");
+
+    fclose(fd);
+}
+
+template<typename T>
+void read_file(const char *filename, std::vector<T>& ptr){
+    struct stat filestat;
+    FILE* fd;
+
     if ((fd = fopen(filename, "r")) == nullptr)
         spdlog::error("open() file " + std::string(filename) + " failed" );
 
@@ -297,6 +321,50 @@ void my_load(std::vector<X> &x, std::istream &in, typename std::enable_if<std::i
     spdlog::info("Elapsed time (s): ", std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count()); \
     std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count();                                \
   })
+
+//------------------------------------------------------------------------------
+
+//*********************** Kasai et al. LCP construction algorithm ***************************************
+template<typename T, typename S, typename lcp_t>
+void LCP_array(S* s, const std::vector<T>& isa, const std::vector<T>& sa, size_t n, std::vector<lcp_t>& lcp){
+    lcp[0]  = 0;
+    
+    T l = 0;
+    for (size_t i = 0; i < n; ++i){
+        // if i is the last character LCP is not defined
+        T k = isa[i];
+        if(k > 0){
+            T j = sa[k-1];
+            // I find the longest common prefix of the i-th suffix and the j-th suffix.
+            while(s[i+l] == s[j+l]) l++;
+            // l stores the length of the longest common prefix between the i-th suffix and the j-th suffix
+            lcp[k] = l;
+            if(l>0) l--;
+        }
+    }
+}
+
+//*********************** Kasai et al. LCP construction algorithm rec text ***************************************
+template<typename T, typename S, typename lcp_t>
+void LCP_array_cyclic_text(S* s, const std::vector<T>& isa, const std::vector<T>& sa, size_t n, std::vector<lcp_t>& lcp){
+    lcp[0] = 0;
+
+    T l = 0;
+    for (size_t i = 0; i < n; ++i){
+        // if i is the last character LCP is not defined
+        T k = isa[i];
+        if(k > 0){
+            T j = sa[k-1];
+            // I find the longest common prefix of the i-th suffix and the j-th suffix.
+            while(l <= n && s[(i+l) % n] == s[(j+l) % n]) l++;
+            // l stores the length of the longest common prefix between the i-th suffix and the j-th suffix
+            lcp[k] = l;
+            if(l>0) l--;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 
 } // end namespace pfpds
 

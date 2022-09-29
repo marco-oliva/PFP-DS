@@ -32,23 +32,86 @@ CATCH_REGISTER_LISTENER(listener)
 
 std::string testfiles_dir = "../tests/files";
 
-std::size_t p_global = 75;
-std::size_t w_global = 20;
+//------------------------------------------------------------------------------
+
+void read_fasta_file(const char *filename, std::vector<uint8_t>& v){
+    FILE* fd;
+    
+    if ((fd = fopen(filename, "r")) == nullptr)
+        spdlog::error("open() file " + std::string(filename) + " failed" );
+    
+    v.clear();
+
+    char c;
+    while (fread( &c, sizeof(char), 1,fd) == 1) {
+        if(c == '>'){
+            while(fread( &c, sizeof(char), 1,fd) == 1 && c != '\n');
+        }else{
+            v.push_back(c);
+            while(fread( &c, sizeof(char), 1,fd) == 1 && c!= '\n') v.push_back(c);
+        }
+    }
+    fclose(fd);
+}
 
 //------------------------------------------------------------------------------
 
-#include <dictionary.hpp>
+//#include <dictionary.hpp>
+//#include <parse.hpp>
+#include <pfp.hpp>
+#include <ra_support.hpp>
 
-TEST_CASE( "dictionary<uint8_t> Build SA_D", "Dictionary" )
+//TEST_CASE( "dictionary<uint8_t> Build SA_D", "Dictionary" )
+//{
+//    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", 10, true, false, false, false, false);
+//    REQUIRE(true);
+//}
+//
+//TEST_CASE( "dictionary<uint32_t> Build SA_D", "Dictionary" )
+//{
+//    pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", 5, true, false, false, false, false);
+//    REQUIRE(true);
+//}
+//
+//TEST_CASE( "parse<uint32_t> Build all ds", "Parse" )
+//{
+//    std::size_t yeast_dict_phrases = 115669;
+//    pfpds::parse parse(testfiles_dir + "/yeast.fasta", yeast_dict_phrases + 1);
+//    REQUIRE(true);
+//}
+
+TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
-    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", 10, true, false, false, false, false);
-    REQUIRE(true);
+    std::vector<uint8_t> yeast;
+    read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
+
+    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10);
+    pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
+
+    bool all_good = true;
+    for (std::size_t i = 0; i < yeast.size(); i++)
+    {
+        all_good = all_good and (yeast[i] == ra_support(i));
+        if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast.size()); break; }
+    }
+    REQUIRE(all_good);
 }
 
-TEST_CASE( "dictionary<uint32_t> Build SA_D", "Dictionary" )
+TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 {
-    pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", 5, true, false, false, false, false);
-    REQUIRE(true);
+    std::vector<uint32_t> yeast_parse;
+    pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
+    
+    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", 5);
+    pfpds::pfp_ra_support<uint32_t> ra_support(pfp);
+    
+    bool all_good = true;
+    for (std::size_t i = 0; i < yeast_parse.size(); i++)
+    {
+        all_good = all_good and (yeast_parse[i] + 10 == ra_support(i));
+        if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast_parse.size()); break; }
+    }
+    REQUIRE(all_good);
 }
 
 //------------------------------------------------------------------------------
@@ -60,17 +123,13 @@ int main( int argc, char* argv[] )
     using namespace Catch::Clara;
     
     auto cli = session.cli() |
-    Opt( testfiles_dir, "dir" ) ["--test-dir"] ("specify the directory containing the test dna sequences files") |
-    Opt( w_global, "int" ) ["-W"] ("specify w") |
-    Opt( p_global, "int" ) ["-P"] ("specify p");
+    Opt( testfiles_dir, "dir" ) ["--test-dir"] ("specify the directory containing the test dna sequences files");
     
     session.cli(cli);
     
     int returnCode = session.applyCommandLine(argc, argv);
     
     if( returnCode != 0 ) return returnCode;
-    
-    spdlog::info("Tests running with w: {}\tp: {}", w_global, p_global);
     
     session.run();
 }

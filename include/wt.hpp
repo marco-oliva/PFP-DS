@@ -1,36 +1,37 @@
 /* pfp - prefix free parsing wt W support
-    Copyright (C) 2020 Ondřej Cvacho
+Copyright (C) 2020 Ondřej Cvacho
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/ .
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/ .
 */
 /*!
-   \file wt.hpp
-   \brief wt.hpp define and build the prefix-free parsing wavelet tree support data structures.
-   \author Ondřej Cvacho
-   \date 03/04/2020
+\file wt.hpp
+\brief wt.hpp define and build the prefix-free parsing wavelet tree support data structures.
+\author Ondřej Cvacho
+\date 03/04/2020
 */
 
 
 #ifndef _PFP_WT_HH
 #define _PFP_WT_HH
 
-#include <common.hpp>
+#include <utils.hpp>
 
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
 
-
+namespace pfpds
+{
 
 class pfp_wt {
 public:
@@ -91,7 +92,7 @@ public:
     struct wt_node {
         
         wt_node (wt_node * parent = nullptr)
-        : parent(parent)
+            : parent(parent)
         { }
         
         wt_bv bit_vector;
@@ -158,11 +159,11 @@ public:
     };
     
     pfp_wt_custom()
-    : root(new wt_node())
+        : root(new wt_node())
     { }
     
     pfp_wt_custom(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse)
-    : root(new wt_node()), alphabet(sorted_alphabet) {
+        : root(new wt_node()), alphabet(sorted_alphabet) {
         for (size_type i = 0; i < alphabet.size(); ++i) {
             leafs[alphabet[i]].alphabet_index = i;
         }
@@ -355,14 +356,14 @@ public:
         // Fill leaves pointers
         std::function<void(wt_node &, std::map<uint32_t, leaf_info> &)> vis;
         vis = [&vis](wt_node &node, std::map<uint32_t, leaf_info> &l) -> void {
-          if(node.is_leaf()){
-              // leaf
-              l[node.phrase_id].leaf_link = std::addressof(node);
-              return;
-          } else {
-              vis(*(node.left),l);
-              vis(*(node.right),l);
-          }
+            if(node.is_leaf()){
+                // leaf
+                l[node.phrase_id].leaf_link = std::addressof(node);
+                return;
+            } else {
+                vis(*(node.left),l);
+                vis(*(node.right),l);
+            }
         };
         
         vis(*root,leafs);
@@ -604,5 +605,7 @@ private:
     std::vector<uint32_t> i_translate;
     std::vector<uint32_t> translate;
 };
+
+}
 
 #endif /* end of include guard: _PFP_WT_HH */
