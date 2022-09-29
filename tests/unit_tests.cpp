@@ -61,25 +61,6 @@ void read_fasta_file(const char *filename, std::vector<uint8_t>& v){
 #include <pfp.hpp>
 #include <ra_support.hpp>
 
-//TEST_CASE( "dictionary<uint8_t> Build SA_D", "Dictionary" )
-//{
-//    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", 10, true, false, false, false, false);
-//    REQUIRE(true);
-//}
-//
-//TEST_CASE( "dictionary<uint32_t> Build SA_D", "Dictionary" )
-//{
-//    pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", 5, true, false, false, false, false);
-//    REQUIRE(true);
-//}
-//
-//TEST_CASE( "parse<uint32_t> Build all ds", "Parse" )
-//{
-//    std::size_t yeast_dict_phrases = 115669;
-//    pfpds::parse parse(testfiles_dir + "/yeast.fasta", yeast_dict_phrases + 1);
-//    REQUIRE(true);
-//}
-
 TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
     std::vector<uint8_t> yeast;
