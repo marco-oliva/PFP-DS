@@ -8,6 +8,9 @@
 
 #include <utils.hpp>
 
+#undef max
+#undef min
+
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch_all.hpp>
 
@@ -34,8 +37,17 @@ std::size_t w_global = 20;
 
 //------------------------------------------------------------------------------
 
-TEST_CASE( "Mock", "[Mock]" )
+#include <dictionary.hpp>
+
+TEST_CASE( "dictionary<uint8_t> Build SA_D", "Dictionary" )
 {
+    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", 10, true, false, false, false, false);
+    REQUIRE(true);
+}
+
+TEST_CASE( "dictionary<uint32_t> Build SA_D", "Dictionary" )
+{
+    pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", 5, true, false, false, false, false);
     REQUIRE(true);
 }
 

@@ -34,8 +34,7 @@ extern "C" {
 }
 
 // TODO: Extend it to non-integer alphabets
-class parse
-{
+class parse{
 public:
     std::vector<uint32_t> p;
     std::vector<uint_t> saP;
@@ -84,6 +83,7 @@ public:
         p.push_back(0); // this is the terminator for the sacak algorithm
         
         build(saP_flag_, isaP_flag_, lcpP_flag_, rmq_lcp_P_flag_);
+        
     }
     
     void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_){

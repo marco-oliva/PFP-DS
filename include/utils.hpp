@@ -29,6 +29,13 @@
 
 #include <spdlog/spdlog.h>
 
+#include <sdsl/io.hpp>  // serialize and load
+#include <type_traits>  // enable_if_t and is_fundamental
+
+extern "C" {
+#include<gsacak.h>
+}
+
 namespace pfpds
 {
 
@@ -147,6 +154,150 @@ void update(std::size_t num_of_bytes);
 
 //------------------------------------------------------------------------------
 
-} // end namespace vcfbwt
+template <typename data_type>
+void gsacak_templated(data_type *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k = 0)
+{
+    // NOP
+    spdlog::error("Not executing gsacak, wrong template used."); std::exit(1);
+}
 
-#endif //utils_hpp
+template<>
+void gsacak_templated<uint8_t> (uint8_t *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
+{
+    gsacak(s, SA, LCP, DA, n);
+};
+
+template<>
+void gsacak_templated<uint32_t> (uint32_t *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
+{
+    gsacak_int(s, SA, LCP, DA, n, k);
+};
+
+//------------------------------------------------------------------------------
+
+
+template<typename T>
+void read_file(const char *filename, std::vector<T>& ptr){
+    struct stat filestat;
+    FILE* fd;
+    
+    if ((fd = fopen(filename, "r")) == nullptr)
+        spdlog::error("open() file " + std::string(filename) + " failed" );
+
+    int fn = fileno(fd);
+    if (fstat(fn, &filestat) < 0)
+        spdlog::error("stat() file " + std::string(filename) + " failed" );
+
+    if(filestat.st_size % sizeof(T) != 0)
+        spdlog::error("invilid file " + std::string(filename));
+
+    size_t length = filestat.st_size / sizeof(T);
+    ptr.resize(length);
+
+    if ((fread(&ptr[0], sizeof(T), length, fd)) != length)
+        spdlog::error("fread() file " + std::string(filename) + " failed");
+
+    fclose(fd);
+}
+
+//------------------------------------------------------------------------------
+
+//********** begin my serialize edit from sdsl ********************
+// Those are wrapper around most of the serialization functions of sdsl
+
+//! Serialize each element of an std::vector
+/*!
+ * \param vec The vector which should be serialized.
+ * \param out Output stream to which should be written.
+ * \param v   Structure tree node. Note: If all elements have the same
+ *            structure, then it is tried to combine all elements (i.e.
+ *            make one node w with size set to the cumulative sum of all
+ *           sizes of the children)
+ */
+// specialization for fundamental types
+template <class T>
+uint64_t
+my_serialize_vector(const std::vector<T> &vec, std::ostream &out, sdsl::structure_tree_node *v, std::string name, typename std::enable_if<std::is_fundamental<T>::value>::type * = 0)
+{
+    if (vec.size() > 0)
+    {
+        sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, "std::vector<" + sdsl::util::class_name(vec[0]) + ">");
+        size_t written_bytes = 0;
+
+        const T *p = &vec[0];
+        typename std::vector<T>::size_type idx = 0;
+        while (idx + sdsl::conf::SDSL_BLOCK_SIZE < (vec.size()))
+        {
+            out.write((char *)p, sdsl::conf::SDSL_BLOCK_SIZE * sizeof(T));
+            written_bytes += sdsl::conf::SDSL_BLOCK_SIZE * sizeof(T);
+            p += sdsl::conf::SDSL_BLOCK_SIZE;
+            idx += sdsl::conf::SDSL_BLOCK_SIZE;
+        }
+        out.write((char *)p, ((vec.size()) - idx) * sizeof(T));
+        written_bytes += ((vec.size()) - idx) * sizeof(T);
+
+        sdsl::structure_tree::add_size(child, written_bytes);
+        return written_bytes;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+template <typename X>
+uint64_t
+my_serialize(const std::vector<X> &x,
+             std::ostream &out, sdsl::structure_tree_node *v = nullptr,
+             std::string name = "", typename std::enable_if<std::is_fundamental<X>::value>::type * = 0)
+{
+    return sdsl::serialize(x.size(), out, v, name) + my_serialize_vector(x, out, v, name);
+}
+
+//! Load all elements of a vector from a input stream
+/*! \param vec  Vector whose elements should be loaded.
+ *  \param in   Input stream.
+ *  \par Note
+ *   The vector has to be resized prior the loading
+ *   of its elements.
+ */
+template <class T>
+void my_load_vector(std::vector<T> &vec, std::istream &in, typename std::enable_if<std::is_fundamental<T>::value>::type * = 0)
+{
+    T *p = &vec[0];
+    typename std::vector<T>::size_type idx = 0;
+    while (idx + sdsl::conf::SDSL_BLOCK_SIZE < (vec.size()))
+    {
+        in.read((char *)p, sdsl::conf::SDSL_BLOCK_SIZE * sizeof(T));
+        p += sdsl::conf::SDSL_BLOCK_SIZE;
+        idx += sdsl::conf::SDSL_BLOCK_SIZE;
+    }
+    in.read((char *)p, ((vec.size()) - idx) * sizeof(T));
+}
+
+template <typename X>
+void my_load(std::vector<X> &x, std::istream &in, typename std::enable_if<std::is_fundamental<X>::value>::type * = 0)
+{
+    typename std::vector<X>::size_type size;
+    sdsl::load(size, in);
+    x.resize(size);
+    my_load_vector(x, in);
+}
+
+//------------------------------------------------------------------------------
+
+/*!
+ * op the operation that we want to measure
+ */
+#define _elapsed_time(op)                                                                                               \
+  ({                                                                                                                    \
+    std::chrono::high_resolution_clock::time_point t_insert_start = std::chrono::high_resolution_clock::now();          \
+    op;                                                                                                                 \
+    std::chrono::high_resolution_clock::time_point t_insert_end = std::chrono::high_resolution_clock::now();            \
+    spdlog::info("Elapsed time (s): ", std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count()); \
+    std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count();                                \
+  })
+
+} // end namespace pfpds
+
+#endif // utils_hpp
