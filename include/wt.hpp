@@ -478,11 +478,11 @@ public:
     }
     
     size_type rank(const size_type i, const uint32_t c) const override {
-        wt_i.rank(i, translate[c - 1]);
+        return wt_i.rank(i, translate[c - 1]);
     }
     
     size_type select(const size_type i, const uint32_t c) const override {
-        wt_i.select(i, translate[c - 1]);
+        return wt_i.select(i, translate[c - 1]);
     }
     
     size_type range_count (const uint32_t t, const uint32_t b, const size_type i) const override {
@@ -558,11 +558,11 @@ public:
     }
     
     size_type rank(const size_type i, const uint32_t c) const override {
-        wt_i.rank(i, translate[c - 1]);
+        return wt_i.rank(i, translate[c - 1]);
     }
     
     size_type select(const size_type i, const uint32_t c) const override {
-        wt_i.select(i, translate[c - 1]);
+        return wt_i.select(i, translate[c - 1]);
     }
     
     size_type range_count (const uint32_t t, const uint32_t b, const size_type i) const override {

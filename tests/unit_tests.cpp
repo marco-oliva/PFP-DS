@@ -34,7 +34,8 @@ std::string testfiles_dir = "../tests/files";
 
 //------------------------------------------------------------------------------
 
-void read_fasta_file(const char *filename, std::vector<uint8_t>& v){
+template <class char_type>
+void read_fasta_file(const char *filename, std::vector<char_type>& v){
     FILE* fd;
     
     if ((fd = fopen(filename, "r")) == nullptr)
@@ -56,42 +57,71 @@ void read_fasta_file(const char *filename, std::vector<uint8_t>& v){
 
 //------------------------------------------------------------------------------
 
-//#include <dictionary.hpp>
-//#include <parse.hpp>
 #include <pfp.hpp>
 #include <ra_support.hpp>
+#include <sa_support.hpp>
 
-TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
+//TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
+//{
+//    std::vector<uint8_t> yeast;
+//    read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
+//
+//    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10);
+//    pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
+//
+//    bool all_good = true;
+//    for (std::size_t i = 0; i < yeast.size(); i++)
+//    {
+//        all_good = all_good and (yeast[i] == ra_support(i));
+//        if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast.size()); break; }
+//    }
+//    REQUIRE(all_good);
+//}
+//
+//TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
+//{
+//    std::vector<uint32_t> yeast_parse;
+//    pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
+//
+//    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", 5);
+//    pfpds::pfp_ra_support<uint32_t> ra_support(pfp);
+//
+//    bool all_good = true;
+//    for (std::size_t i = 0; i < yeast_parse.size(); i++)
+//    {
+//        all_good = all_good and (yeast_parse[i] + 10 == ra_support(i));
+//        if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast_parse.size()); break; }
+//    }
+//    REQUIRE(all_good);
+//}
+
+#include <sdsl/suffix_arrays.hpp>
+TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 {
-    std::vector<uint8_t> yeast;
+    std::size_t w = 10;
+    
+    pfpds::pf_parsing<char> pfp(testfiles_dir + "/yeast.fasta", w);
+    pfpds::pfp_sa_support<char> sa_support(pfp);
+    
+    // TEST sa_ds
+    std::vector<char> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
+    yeast.insert(yeast.begin(), w - 1, 3);
+    yeast.insert(yeast.end(), w - 1, 5);
+    yeast.push_back(4);
+    yeast.push_back(0);
 
-    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10);
-    pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
+    uint8_t num_bytes = 1;
+    sdsl::csa_wt<> csa;
+    sdsl::construct_im(csa, static_cast<const char *>(&yeast[0]), num_bytes);
 
     bool all_good = true;
-    for (std::size_t i = 0; i < yeast.size(); i++)
+    for (std::size_t i = 0; i < yeast.size(); ++i)
     {
-        all_good = all_good and (yeast[i] == ra_support(i));
-        if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast.size()); break; }
+        all_good = all_good and (sa_support(i) == ((csa[i] + (yeast.size()) - w + 1) % (yeast.size())));
+        if (not all_good) { break; }
     }
-    REQUIRE(all_good);
-}
-
-TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
-{
-    std::vector<uint32_t> yeast_parse;
-    pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
     
-    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", 5);
-    pfpds::pfp_ra_support<uint32_t> ra_support(pfp);
-    
-    bool all_good = true;
-    for (std::size_t i = 0; i < yeast_parse.size(); i++)
-    {
-        all_good = all_good and (yeast_parse[i] + 10 == ra_support(i));
-        if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast_parse.size()); break; }
-    }
     REQUIRE(all_good);
 }
 

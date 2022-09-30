@@ -88,14 +88,14 @@ public:
         spdlog::info("Computing b_p");
         _elapsed_time(compute_b_p());
         
-//        spdlog::info("Computing b_bwt and M of the parsing");
-//        _elapsed_time(build_b_bwt_and_M());
-//
-//        spdlog::info("Computing W of BWT(P)");
-//        _elapsed_time(build_W());
-//
-//        // Clear unnecessary elements
-//        clear_unnecessary_elements();
+        spdlog::info("Computing b_bwt and M of the parsing");
+        _elapsed_time(build_b_bwt_and_M());
+
+        spdlog::info("Computing W of BWT(P)");
+        _elapsed_time(build_W());
+
+        // Clear unnecessary elements
+        clear_unnecessary_elements();
     }
     
     pf_parsing( std::string filename, size_t w_):
@@ -105,7 +105,7 @@ public:
     w(w_)
     {
         // Uploading the frequency file
-        uint32_t *occ;
+        uint_t *occ;
         size_t d_words;
         std::string tmp_filename = filename + std::string(".occ");
         read_file<uint_t> (tmp_filename.c_str(), occ, d_words); // here occ has the same size as the integers used for gsacak.
@@ -118,14 +118,14 @@ public:
         spdlog::info("Computing b_p");
         _elapsed_time(compute_b_p());
         
-//        spdlog::info("Computing b_bwt and M of the parsing");
-//        _elapsed_time(build_b_bwt_and_M());
-//
-//        spdlog::info("Computing W of BWT(P)");
-//        _elapsed_time(build_W());
-//
-//        // Clear unnecessary elements
-//        clear_unnecessary_elements();
+        spdlog::info("Computing b_bwt and M of the parsing");
+        _elapsed_time(build_b_bwt_and_M());
+
+        spdlog::info("Computing W of BWT(P)");
+        _elapsed_time(build_W());
+
+        // Clear unnecessary elements
+        clear_unnecessary_elements();
     }
     
     void compute_b_p() {

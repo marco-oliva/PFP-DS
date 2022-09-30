@@ -53,6 +53,7 @@ public:
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
     std::vector<uint_t> colex_id;
+    std::size_t alphabet_size = 0;
     
     bool saD_flag = false;
     bool isaD_flag = false;
@@ -113,13 +114,13 @@ public:
     
     void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_){
         // Get alphabet size
-        data_type alphabet_size = (*std::max_element(d.begin(), d.end())) + 1;
+        alphabet_size = (*std::max_element(d.begin(), d.end())) + 1;
         
         // Building the bitvector with a 1 in each starting position of each phrase in D
         b_d.resize(d.size());
         for(size_t i = 0; i < b_d.size(); ++i) b_d[i] = false; // bug in resize
         b_d[0] = true; // Mark the first phrase
-        for(int i = 1; i < d.size(); ++i )
+        for(long long int i = 1; i < d.size(); ++i )
             b_d[i] = (d[i-1]==EndOfWord);
         b_d[d.size()-1] = true; // This is necessary to get the length of the last phrase
         
@@ -188,86 +189,47 @@ public:
             );
         }
         
-        if (false)
-        {
-            // if(colex_daD_flag_){
-            // co-lex document array of the dictionary.
-            spdlog::info("Computing co-lex DA of dictionary");
-            _elapsed_time(
-            // {
-            //   std::vector<uint_t>colex_id(n_phrases());
-            //   std::vector<uint_t>inv_colex_id(n_phrases()); // I am using it as starting positions
-            //   for(int i = 0, j = 0; i < d.size(); ++i )
-            //     if(d[i+1]==EndOfWord){
-            //       colex_id[j] = j;
-            //       inv_colex_id[j++] = i;
-            //     }
-        
-            //   colex_document_array_helper(inv_colex_id,colex_id,0,n_phrases());
-        
-            //   // computing inverse colex id
-            //   for(int i = 0; i < colex_id.size(); ++i){
-            //     inv_colex_id[colex_id[i]] = i;
-            //   }
-            //   colex_id.clear();
-        
-            //   colex_daD.resize(d.size());
-            //   for(int i = 0; i < colex_daD.size(); ++i ){
-            //     colex_daD[i]  = inv_colex_id[daD[i]];
-            //   }
-            // }
-            {
-                compute_colex_da();
-                rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
-                rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
-            }
-            );
-        }
-        // }
-    }
+   
+        // if(colex_daD_flag_){
+        // co-lex document array of the dictionary.
+        spdlog::info("Computing co-lex DA of dictionary");
+        _elapsed_time(
+        // {
+        //   std::vector<uint_t>colex_id(n_phrases());
+        //   std::vector<uint_t>inv_colex_id(n_phrases()); // I am using it as starting positions
+        //   for(int i = 0, j = 0; i < d.size(); ++i )
+        //     if(d[i+1]==EndOfWord){
+        //       colex_id[j] = j;
+        //       inv_colex_id[j++] = i;
+        //     }
     
-    // I am assuming that the alphabet fits in an unsigned char
-    void colex_document_array_helper(std::vector<uint_t>& sp, std::vector<uint_t>& id, size_t start, size_t end ){
-        if((end - start < 2) || (start > end)) return;
-        
-        
-        std::vector<uint32_t> count(256,0);
-        for(size_t i = start; i < end; ++i ){
-            count[ d[ sp[i] ] ] ++;
+        //   colex_document_array_helper(inv_colex_id,colex_id,0,n_phrases());
+    
+        //   // computing inverse colex id
+        //   for(int i = 0; i < colex_id.size(); ++i){
+        //     inv_colex_id[colex_id[i]] = i;
+        //   }
+        //   colex_id.clear();
+    
+        //   colex_daD.resize(d.size());
+        //   for(int i = 0; i < colex_daD.size(); ++i ){
+        //     colex_daD[i]  = inv_colex_id[daD[i]];
+        //   }
+        // }
+        {
+            compute_colex_da();
+            rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
+            rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
         }
+        );
         
-        std::vector<uint32_t> psum(256,0);
-        for(size_t i = 1; i < 256; ++i){
-            psum[i] = psum[i-1] + count[i-1];
-        }
-        
-        std::vector<uint_t> tmp(end-start+1,0);
-        std::vector<uint_t> tmp_id(end-start+1,0);
-        for(size_t i = start; i < end; ++i ){
-            size_t index = psum[ d[sp[i] ] ] ++;
-            tmp[index] = std::min(sp[i]-1, static_cast<uint_t>(d.size()-1));
-            tmp_id[index] = id[i];
-        }
-        
-        
-        // Recursion
-        size_t tmp_start = 0;
-        for(size_t i = 0; i < 256; ++i ){
-            for(size_t j = 0; j < count[i]; ++j){
-                sp[start + j] = tmp[tmp_start];
-                id[start + j] = tmp_id[tmp_start ++];
-            }
-            end = start + count[i];
-            if(i > EndOfWord) colex_document_array_helper(sp,id,start,end);
-            start = end;
-        }
-        
+        // }
     }
     
     void compute_colex_da(){
         colex_id.resize(n_phrases());
         std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
-        for (int i = 0, j = 0; i < d.size(); ++i)
+        for (long long int i = 0, j = 0; i < d.size(); ++i)
             if (d[i + 1] == EndOfWord)
             {
                 colex_id[j] = j;
@@ -275,25 +237,25 @@ public:
             }
         
         // buckets stores the begin and the end of each bucket.
-        std::queue<std::pair<int,int> > buckets;
+        std::queue<std::pair<long long int, long long int>> buckets;
         // the first bucket is the whole array.
         buckets.push({0,colex_id.size()});
         
         // for each bucket
         while(!buckets.empty()){
             auto bucket = buckets.front(); buckets.pop();
-            int start = bucket.first;
-            int end = bucket.second;
+            long long int start = bucket.first;
+            long long int end = bucket.second;
             if ((start < end) && (end - start > 1))
             {
-                std::vector<uint32_t> count(256, 0);
+                std::vector<uint_t> count(alphabet_size, 0);
                 for (size_t i = start; i < end; ++i)
                 {
                     count[d[inv_colex_id[i]]]++;
                 }
                 
-                std::vector<uint32_t> psum(256, 0);
-                for (size_t i = 1; i < 256; ++i)
+                std::vector<uint_t> psum(alphabet_size, 0);
+                for (size_t i = 1; i < alphabet_size; ++i)
                 {
                     psum[i] = psum[i - 1] + count[i - 1];
                 }
@@ -309,7 +271,7 @@ public:
                 
                 // Recursion
                 size_t tmp_start = 0;
-                for (size_t i = 0; i < 256; ++i)
+                for (size_t i = 0; i < alphabet_size; ++i)
                 {
                     for (size_t j = 0; j < count[i]; ++j)
                     {
@@ -327,21 +289,17 @@ public:
         }
         
         // computing inverse colex id
-        for (int i = 0; i < colex_id.size(); ++i)
+        for (long long int i = 0; i < colex_id.size(); ++i)
         {
             inv_colex_id[colex_id[i]] = i;
         }
         colex_id.clear();
         
         colex_daD.resize(d.size());
-        for (int i = 0; i < colex_daD.size(); ++i)
+        for (long long int i = 0; i < colex_daD.size(); ++i)
         {
             colex_daD[i] = inv_colex_id[daD[i]];
         }
-        
-        return;
-        
-        
     }
     
     // Serialize to a stream.
@@ -413,6 +371,84 @@ public:
         // sdsl::load(colex_id, in);
     }
 };
+
+
+//template <>
+//void dictionary<char>::compute_colex_da(){
+//    colex_id.resize(n_phrases());
+//    std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
+//    for (int i = 0, j = 0; i < d.size(); ++i)
+//        if (d[i + 1] == EndOfWord)
+//        {
+//            colex_id[j] = j;
+//            inv_colex_id[j++] = i;
+//        }
+//
+//    // buckets stores the begin and the end of each bucket.
+//    std::queue<std::pair<int,int> > buckets;
+//    // the first bucket is the whole array.
+//    buckets.push({0,colex_id.size()});
+//
+//    // for each bucket
+//    while(!buckets.empty()){
+//        auto bucket = buckets.front(); buckets.pop();
+//        int start = bucket.first;
+//        int end = bucket.second;
+//        if ((start < end) && (end - start > 1))
+//        {
+//            std::vector<uint32_t> count(256, 0);
+//            for (size_t i = start; i < end; ++i)
+//            {
+//                count[d[inv_colex_id[i]]]++;
+//            }
+//
+//            std::vector<uint32_t> psum(256, 0);
+//            for (size_t i = 1; i < 256; ++i)
+//            {
+//                psum[i] = psum[i - 1] + count[i - 1];
+//            }
+//
+//            std::vector<uint_t> tmp(end - start, 0);
+//            std::vector<uint_t> tmp_id(end - start, 0);
+//            for (size_t i = start; i < end; ++i)
+//            {
+//                size_t index = psum[d[inv_colex_id[i]]]++;
+//                tmp[index] = std::min(inv_colex_id[i] - 1, static_cast<uint_t>(d.size() - 1));
+//                tmp_id[index] = colex_id[i];
+//            }
+//
+//            // Recursion
+//            size_t tmp_start = 0;
+//            for (size_t i = 0; i < 256; ++i)
+//            {
+//                for (size_t j = 0; j < count[i]; ++j)
+//                {
+//                    inv_colex_id[start + j] = tmp[tmp_start];
+//                    colex_id[start + j] = tmp_id[tmp_start++];
+//                }
+//                end = start + count[i];
+//                if (i > EndOfWord){
+//                    buckets.push({start, end});
+//                }
+//                start = end;
+//            }
+//        }
+//
+//    }
+//
+//    // computing inverse colex id
+//    for (int i = 0; i < colex_id.size(); ++i)
+//    {
+//        inv_colex_id[colex_id[i]] = i;
+//    }
+//    colex_id.clear();
+//
+//    colex_daD.resize(d.size());
+//    for (int i = 0; i < colex_daD.size(); ++i)
+//    {
+//        colex_daD[i] = inv_colex_id[daD[i]];
+//    }
+//}
 
 }
 

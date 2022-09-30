@@ -168,6 +168,12 @@ void gsacak_templated<uint8_t> (uint8_t *s, uint_t *SA, int_t *LCP, int_da *DA, 
 };
 
 template<>
+void gsacak_templated<char> (char *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
+{
+    gsacak((unsigned char*) s, SA, LCP, DA, n);
+};
+
+template<>
 void gsacak_templated<uint32_t> (uint32_t *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
 {
     gsacak_int(s, SA, LCP, DA, n, k);
