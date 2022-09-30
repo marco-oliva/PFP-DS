@@ -99,10 +99,10 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 {
     std::size_t w = 10;
-    
+
     pfpds::pf_parsing<char> pfp(testfiles_dir + "/yeast.fasta", w);
     pfpds::pfp_sa_support<char> sa_support(pfp);
-    
+
     // TEST sa_ds
     std::vector<char> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
@@ -119,6 +119,33 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     for (std::size_t i = 0; i < yeast.size(); ++i)
     {
         all_good = all_good and (sa_support(i) == ((csa[i] + (yeast.size()) - w + 1) % (yeast.size())));
+        if (not all_good) { break; }
+    }
+
+    REQUIRE(all_good);
+}
+
+TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
+{
+    std::size_t w = 5;
+    
+    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w);
+    pfpds::pfp_sa_support<uint32_t> sa_support(pfp);
+    
+    // TEST sa_ds
+    std::vector<uint32_t> yeast_parse;
+    pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
+    yeast_parse.push_back(0);
+    
+    std::vector<uint32_t> yeast_parse_SA;
+    yeast_parse_SA.resize(yeast_parse.size());
+    std::size_t alphabet_size = (*std::max_element(yeast_parse.begin(), yeast_parse.end())) + 1;
+    sacak_int(&yeast_parse[0],&yeast_parse_SA[0],yeast_parse.size(), alphabet_size);
+
+    bool all_good = true;
+    for (std::size_t i = 1; i < yeast_parse.size(); ++i)
+    {
+        all_good = all_good and (sa_support(i + w - 1) == yeast_parse_SA[i]);
         if (not all_good) { break; }
     }
     
