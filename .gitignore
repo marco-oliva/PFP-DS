@@ -1,2 +1,5 @@
 
 tests/files/*
+cmake-build-*
+build
+.idea
