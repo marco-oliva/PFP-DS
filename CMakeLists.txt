@@ -58,42 +58,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BUILD_TYPE_FLAGS}")
 ################################################################################
 # Check dependencies
 
-Include(FetchContent)
+include(FetchContent)
 
-# Catch
-FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG        v3.0.1
-)
-# Making available only if building tests
-
-# CLI11
-FetchContent_Declare(
-        cli11
-        URL https://github.com/CLIUtils/CLI11/releases/download/v2.2.0/CLI11.hpp
-        DOWNLOAD_NO_EXTRACT True
-)
-FetchContent_Populate(cli11)
-include_directories(${cli11_SOURCE_DIR})
-
-# SPDLOG
-FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG        v1.10.0
-)
-FetchContent_Populate(spdlog)
-include_directories(${spdlog_SOURCE_DIR}/include)
-
-# malloc count
-FetchContent_Declare(
-        mcount
-        GIT_REPOSITORY https://github.com/bingmann/malloc_count.git
-        GIT_TAG        v0.7.1
-)
-FetchContent_Populate(mcount)
-
+## Add gsacak
 FetchContent_Declare(
         gsacak
         GIT_REPOSITORY https://github.com/felipelouza/gsa-is.git
@@ -108,24 +75,24 @@ if(NOT gsacak_POPULATED)
     add_library(gsacak64 OBJECT ${gsacak_SOURCE_DIR}/gsacak.c ${gsacak_SOURCE_DIR}/gsacak.h)
     target_include_directories(gsacak64 PUBLIC "${gsacak_SOURCE_DIR}")
     target_compile_options(gsacak64 PUBLIC -DM64)
-    # add_subdirectory(${gsacak_SOURCE_DIR} ${gsacak_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
 
-## Google benchmark
-FetchContent_Declare(
-        benchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        v1.5.0
-)
+if(${BUILD_BENCHMARKS})
+    ## Google benchmark
+    FetchContent_Declare(
+            benchmark
+            GIT_REPOSITORY https://github.com/google/benchmark.git
+            GIT_TAG        master
+    )
 
-FetchContent_GetProperties(benchmark)
-if(NOT benchmark_POPULATED)
-    FetchContent_Populate(benchmark)
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Enable testing of the benchmark library." FORCE)
-    add_subdirectory(${benchmark_SOURCE_DIR} ${benchmark_BINARY_DIR} EXCLUDE_FROM_ALL)
+    FetchContent_GetProperties(benchmark)
+    if(NOT benchmark_POPULATED)
+        FetchContent_Populate(benchmark)
+        set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Enable testing of the benchmark library." FORCE)
+        add_subdirectory(${benchmark_SOURCE_DIR} ${benchmark_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif()
 endif()
-
 
 ## Add sdsl
 FetchContent_Declare(
@@ -150,12 +117,52 @@ FetchContent_Declare(
 FetchContent_GetProperties(divsufsort)
 if(NOT divsufsort_POPULATED)
     FetchContent_Populate(divsufsort)
+
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "Do not build a shared library for libdivsufsort")
     set(BUILD_EXAMPLES OFF CACHE BOOL "Do not build libdivsufsort example")
     set(BUILD_DIVSUFSORT64 ON CACHE BOOL "Build libdivsufsort in 64-bits mode")
+
     add_subdirectory(${divsufsort_SOURCE_DIR} ${divsufsort_BINARY_DIR} EXCLUDE_FROM_ALL)
+
     target_include_directories(divsufsort PUBLIC "${divsufsort_BINARY_DIR}/include")
     target_include_directories(divsufsort64 PUBLIC "${divsufsort_BINARY_DIR}/include")
+endif()
+
+# malloc count
+FetchContent_Declare(
+        malloc_count
+        GIT_REPOSITORY https://github.com/bingmann/malloc_count.git
+        GIT_TAG        v0.7.1
+)
+FetchContent_GetProperties(malloc_count)
+if(NOT malloc_count_POPULATED)
+    FetchContent_Populate(malloc_count)
+    add_library(malloc_count OBJECT ${malloc_count_SOURCE_DIR}/malloc_count.c ${malloc_count_SOURCE_DIR}/malloc_count.h)
+    target_include_directories(malloc_count PUBLIC "${malloc_count_SOURCE_DIR}")
+    target_link_libraries(malloc_count dl)
+endif()
+
+# Catch
+FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.0.1
+)
+# Making available only if building tests
+if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    FetchContent_MakeAvailable(Catch2)
+endif()
+
+# SPDLOG
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG        v1.10.0
+)
+
+if(NOT spdlog_POPULATED)
+    FetchContent_Populate(spdlog)
+    include_directories(${spdlog_SOURCE_DIR}/include)
 endif()
 
 
@@ -168,8 +175,6 @@ include_directories(include)
 # Tests
 
 if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    FetchContent_MakeAvailable(Catch2)
-
     message(STATUS "Building unit tests")
     add_executable(unit_tests tests/unit_tests.cpp)
     target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak divsufsort divsufsort64)
