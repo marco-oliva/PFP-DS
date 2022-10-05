@@ -32,8 +32,6 @@
 
 #include <pfp.hpp>
 #include <wt.hpp>
-#include <lce_support.hpp>
-
 
 namespace pfpds
 {

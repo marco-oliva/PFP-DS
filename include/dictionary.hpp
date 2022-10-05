@@ -227,6 +227,7 @@ public:
     }
     
     void compute_colex_da(){
+
         colex_id.resize(n_phrases());
         std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
         for (long long int i = 0, j = 0; i < d.size(); ++i)
@@ -242,6 +243,7 @@ public:
         buckets.push({0,colex_id.size()});
         
         // for each bucket
+        std::size_t iterations = 0;
         while(!buckets.empty()){
             auto bucket = buckets.front(); buckets.pop();
             long long int start = bucket.first;
@@ -253,7 +255,7 @@ public:
                 {
                     count[d[inv_colex_id[i]]]++;
                 }
-                
+
                 std::vector<uint_t> psum(alphabet_size, 0);
                 for (size_t i = 1; i < alphabet_size; ++i)
                 {
@@ -287,7 +289,7 @@ public:
             }
             
         }
-        
+
         // computing inverse colex id
         for (long long int i = 0; i < colex_id.size(); ++i)
         {
@@ -300,6 +302,29 @@ public:
         {
             colex_daD[i] = inv_colex_id[daD[i]];
         }
+
+        // ---------- just sort the phrases
+        std::vector<data_type> phrase;
+
+
+//        std::vector<data_type> inverted_phrases_dictionary(d.size(), 0);
+//        for (std::size_t i = 1; i <= n_phrases(); i++)
+//        {
+//            // get start and end position of i-th phrase
+//            long long int start = select_b_d(i);
+//            long long int end = select_b_d(i + 1) - 1;
+//
+//            for (long long int j = end - 1, k = start; j >= start; j--, k++)
+//            {
+//                inverted_phrases_dictionary[k] = d[j];
+//            }
+//            inverted_phrases_dictionary[end] = EndOfWord;
+//        }
+//
+//        std::vector<uint_t> cdaD(d.size(), 0);
+//        std::vector<uint_t> csaD(d.size(), 0);
+//        gsacak_templated<data_type>(&inverted_phrases_dictionary[0],&csaD[0],nullptr,&cdaD[0],d.size(), alphabet_size);
+        // ----------
     }
     
     // Serialize to a stream.
