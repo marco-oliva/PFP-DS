@@ -226,105 +226,122 @@ public:
         // }
     }
     
-    void compute_colex_da(){
-
+    void compute_colex_da()
+    {
         colex_id.resize(n_phrases());
-        std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
-        for (long long int i = 0, j = 0; i < d.size(); ++i)
-            if (d[i + 1] == EndOfWord)
-            {
-                colex_id[j] = j;
-                inv_colex_id[j++] = i;
-            }
         
-        // buckets stores the begin and the end of each bucket.
-        std::queue<std::pair<long long int, long long int>> buckets;
-        // the first bucket is the whole array.
-        buckets.push({0,colex_id.size()});
-        
-        // for each bucket
-        std::size_t iterations = 0;
-        while(!buckets.empty()){
-            auto bucket = buckets.front(); buckets.pop();
-            long long int start = bucket.first;
-            long long int end = bucket.second;
-            if ((start < end) && (end - start > 1))
-            {
-                std::vector<uint_t> count(alphabet_size, 0);
-                for (size_t i = start; i < end; ++i)
-                {
-                    count[d[inv_colex_id[i]]]++;
-                }
-
-                std::vector<uint_t> psum(alphabet_size, 0);
-                for (size_t i = 1; i < alphabet_size; ++i)
-                {
-                    psum[i] = psum[i - 1] + count[i - 1];
-                }
-                
-                std::vector<uint_t> tmp(end - start, 0);
-                std::vector<uint_t> tmp_id(end - start, 0);
-                for (size_t i = start; i < end; ++i)
-                {
-                    size_t index = psum[d[inv_colex_id[i]]]++;
-                    tmp[index] = std::min(inv_colex_id[i] - 1, static_cast<uint_t>(d.size() - 1));
-                    tmp_id[index] = colex_id[i];
-                }
-                
-                // Recursion
-                size_t tmp_start = 0;
-                for (size_t i = 0; i < alphabet_size; ++i)
-                {
-                    for (size_t j = 0; j < count[i]; ++j)
-                    {
-                        inv_colex_id[start + j] = tmp[tmp_start];
-                        colex_id[start + j] = tmp_id[tmp_start++];
-                    }
-                    end = start + count[i];
-                    if (i > EndOfWord){
-                        buckets.push({start, end});
-                    }
-                    start = end;
-                }
-            }
-            
-        }
-
-        // computing inverse colex id
-        for (long long int i = 0; i < colex_id.size(); ++i)
-        {
-            inv_colex_id[colex_id[i]] = i;
-        }
-        colex_id.clear();
-        
-        colex_daD.resize(d.size());
-        for (long long int i = 0; i < colex_daD.size(); ++i)
-        {
-            colex_daD[i] = inv_colex_id[daD[i]];
-        }
-
-        // ---------- just sort the phrases
-        std::vector<data_type> phrase;
-
-
-//        std::vector<data_type> inverted_phrases_dictionary(d.size(), 0);
-//        for (std::size_t i = 1; i <= n_phrases(); i++)
-//        {
-//            // get start and end position of i-th phrase
-//            long long int start = select_b_d(i);
-//            long long int end = select_b_d(i + 1) - 1;
-//
-//            for (long long int j = end - 1, k = start; j >= start; j--, k++)
+//        std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
+//        for (long long int i = 0, j = 0; i < d.size(); ++i)
+//            if (d[i + 1] == EndOfWord)
 //            {
-//                inverted_phrases_dictionary[k] = d[j];
+//                colex_id[j] = j;
+//                inv_colex_id[j++] = i;
 //            }
-//            inverted_phrases_dictionary[end] = EndOfWord;
+//
+//        // buckets stores the begin and the end of each bucket.
+//        std::queue<std::pair<long long int, long long int>> buckets;
+//        // the first bucket is the whole array.
+//        buckets.push({0,colex_id.size()});
+//
+//        // for each bucket
+//        std::size_t iterations = 0;
+//        while(!buckets.empty()){
+//            auto bucket = buckets.front(); buckets.pop();
+//            long long int start = bucket.first;
+//            long long int end = bucket.second;
+//            if ((start < end) && (end - start > 1))
+//            {
+//                std::vector<uint_t> count(alphabet_size, 0);
+//                for (size_t i = start; i < end; ++i)
+//                {
+//                    count[d[inv_colex_id[i]]]++;
+//                }
+//
+//                std::vector<uint_t> psum(alphabet_size, 0);
+//                for (size_t i = 1; i < alphabet_size; ++i)
+//                {
+//                    psum[i] = psum[i - 1] + count[i - 1];
+//                }
+//
+//                std::vector<uint_t> tmp(end - start, 0);
+//                std::vector<uint_t> tmp_id(end - start, 0);
+//                for (size_t i = start; i < end; ++i)
+//                {
+//                    size_t index = psum[d[inv_colex_id[i]]]++;
+//                    tmp[index] = std::min(inv_colex_id[i] - 1, static_cast<uint_t>(d.size() - 1));
+//                    tmp_id[index] = colex_id[i];
+//                }
+//
+//                // Recursion
+//                size_t tmp_start = 0;
+//                for (size_t i = 0; i < alphabet_size; ++i)
+//                {
+//                    for (size_t j = 0; j < count[i]; ++j)
+//                    {
+//                        inv_colex_id[start + j] = tmp[tmp_start];
+//                        colex_id[start + j] = tmp_id[tmp_start++];
+//                    }
+//                    end = start + count[i];
+//                    if (i > EndOfWord){
+//                        buckets.push({start, end});
+//                    }
+//                    start = end;
+//                }
+//            }
+//
 //        }
 //
-//        std::vector<uint_t> cdaD(d.size(), 0);
-//        std::vector<uint_t> csaD(d.size(), 0);
-//        gsacak_templated<data_type>(&inverted_phrases_dictionary[0],&csaD[0],nullptr,&cdaD[0],d.size(), alphabet_size);
-        // ----------
+//        // computing inverse colex id
+//        for (std::size_t i = 0; i < colex_id.size(); ++i)
+//        {
+//            inv_colex_id[colex_id[i]] = i;
+//        }
+//        colex_id.clear();
+//
+//        colex_daD.resize(d.size());
+//        for (std::size_t i = 0; i < colex_daD.size(); ++i)
+//        {
+//            colex_daD[i] = inv_colex_id.at(daD[i] % inv_colex_id.size());
+//        }
+
+        // ---------- just sort the reversed phrases
+        std::vector<uint_t> inv_colex_id_test(n_phrases());
+        std::vector<uint_t> colex_id_test(n_phrases());
+        
+        std::vector<std::pair<std::vector<data_type>,uint32_t>> rev_dict(n_phrases());
+        std::size_t i = 0;
+        std::size_t rank = 0;
+        while(i < d.size()-1)
+        {
+            while((i < d.size()-1) and (d[i] != EndOfWord)) { rev_dict[rank].first.push_back(d[i++]); }
+            i++;
+            reverse(rev_dict[rank].first.begin(), rev_dict[rank].first.end());
+            rev_dict[rank].second = rank;
+            rank++;
+        }
+        std::sort(rev_dict.begin(),rev_dict.end());
+        
+        for (i = 0; i < colex_id.size(); i++) { colex_id[i] = rev_dict[i].second; }
+        for (i = 0; i < inv_colex_id_test.size(); i++) { inv_colex_id_test[colex_id[i]] = i; }
+        
+        // check
+//        assert(inv_colex_id.size() == inv_colex_id_test.size());
+//        for (i = 0; i < inv_colex_id_test.size(); i++)
+//        {
+//            if (inv_colex_id[i] != inv_colex_id_test[i])
+//            {
+//                std::cout << i << std::endl;
+//            }
+//            assert(inv_colex_id[i] == inv_colex_id_test[i]);
+//        }
+        
+        colex_daD.resize(d.size());
+        for (i = 0; i < colex_daD.size(); ++i)
+        {
+            colex_daD[i] = inv_colex_id_test.at(daD[i] % inv_colex_id_test.size());
+        }
+        
+        colex_id.clear();
     }
     
     // Serialize to a stream.
