@@ -101,15 +101,11 @@ public:
     pf_parsing( std::string filename, size_t w_):
     dict(filename, w_),
     pars(filename,dict.n_phrases()+1),
-    freq(1,0),
+    freq(dict.n_phrases() + 1,0),
     w(w_)
     {
-        // Uploading the frequency file
-        uint_t *occ;
-        size_t d_words;
-        std::string tmp_filename = filename + std::string(".occ");
-        read_file<uint_t> (tmp_filename.c_str(), occ, d_words); // here occ has the same size as the integers used for gsacak.
-        freq.insert(freq.end(),occ, occ + d_words);
+        // Generating freq
+        for (std::size_t i = 0; i < pars.p.size(); i++) { freq[pars.p[i]] += 1; }
         
         // Compute the length of the string;
         compute_n();
