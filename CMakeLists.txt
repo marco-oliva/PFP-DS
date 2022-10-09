@@ -176,8 +176,12 @@ include_directories(include)
 
 if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
     message(STATUS "Building unit tests")
+
     add_executable(unit_tests tests/unit_tests.cpp)
     target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak divsufsort divsufsort64)
+
+    add_executable(unit_tests64 tests/unit_tests.cpp)
+    target_link_libraries(unit_tests64 Catch2::Catch2 sdsl gsacak64 divsufsort divsufsort64)
 
     enable_testing()
     add_test(NAME unit_tests COMMAND unit_tests)
