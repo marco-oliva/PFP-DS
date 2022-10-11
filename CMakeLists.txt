@@ -187,13 +187,6 @@ if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
     add_test(NAME unit_tests COMMAND unit_tests)
 
 endif()
-################################################################################
-# Tools
-
-################################################################################
-# Install
-
-# install(TARGETS pfp++ pfp++64 mpfp++ mpfp++64 vcf_to_fa unparse unparse64 check check64)
 
 ################################################################################
 # CPack
