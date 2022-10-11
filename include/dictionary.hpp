@@ -53,6 +53,7 @@ public:
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
     std::vector<uint_t> colex_id;
+    std::vector<uint_t> inv_colex_id;
     std::size_t alphabet_size = 0;
     
     bool saD_flag = false;
@@ -342,6 +343,9 @@ public:
         }
         
         colex_id.clear();
+
+        inv_colex_id.clear();
+        inv_colex_id.insert(inv_colex_id.end(), inv_colex_id_test.begin(), inv_colex_id_test.end());
     }
     
     // Serialize to a stream.
@@ -363,6 +367,7 @@ public:
         written_bytes += rmq_colex_daD.serialize(out, child, "rmq_colex_daD");
         written_bytes += rMq_colex_daD.serialize(out, child, "rMq_colex_daD");
         written_bytes += my_serialize(colex_id, out, child, "colex_id");
+        written_bytes += sdsl::write_member(alphabet_size, out, child, "alphabet_size");
         // written_bytes += sdsl::serialize(d, out, child, "dictionary");
         // written_bytes += sdsl::serialize(saD, out, child, "saD");
         // written_bytes += sdsl::serialize(isaD, out, child, "isaD");
@@ -398,6 +403,7 @@ public:
         rmq_colex_daD.load(in);
         rMq_colex_daD.load(in);
         my_load(colex_id, in);
+        sdsl::read_member(alphabet_size, in);
         // sdsl::load(d, in);
         // sdsl::load(saD, in);
         // sdsl::load(isaD, in);

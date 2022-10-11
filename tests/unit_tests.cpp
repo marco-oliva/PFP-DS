@@ -61,6 +61,84 @@ void read_fasta_file(const char *filename, std::vector<char_type>& v){
 #include <ra_support.hpp>
 #include <sa_support.hpp>
 
+//TEST_CASE( "Q matix 1", "Sparse Matrix" )
+//{
+//    std::vector table_test =
+//    {
+//        0,0,1,2,3,0,0,
+//        4,0,1,1,3,0,0,
+//        0,0,0,0,3,5,0,
+//        0,0,0,0,0,0,0,
+//        0,0,1,2,3,0,1,
+//    };
+//    std::size_t rows = 5;
+//    uint8_t columns = 7;
+//
+//
+//    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns, 13);
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            if (table_test[pos] != 0)
+//            {
+//                table.append(i, j, table_test[pos]);
+//            }
+//        }
+//    }
+//
+//    bool all_good = true;
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            all_good = all_good and (table_test[pos] == table(i, j));
+//        }
+//    }
+//    REQUIRE(all_good);
+//}
+//
+//TEST_CASE( "Q matix 2", "Sparse Matrix" )
+//{
+//    std::vector table_test =
+//            {
+//                    1,0,1,2,3,0,0,
+//                    4,0,1,1,3,0,0,
+//                    0,0,0,0,3,5,0,
+//                    0,0,0,0,0,0,0,
+//                    0,0,1,2,3,0,0,
+//            };
+//    std::size_t rows = 5;
+//    uint8_t columns = 7;
+//
+//
+//    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns, 13);
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            if (table_test[pos] != 0)
+//            {
+//                table.append(i, j, table_test[pos]);
+//            }
+//        }
+//    }
+//
+//    bool all_good = true;
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            all_good = all_good and (table_test[pos] == table(i, j));
+//        }
+//    }
+//    REQUIRE(all_good);
+//}
+//
 //TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 //{
 //    std::vector<uint8_t> yeast;
@@ -152,7 +230,6 @@ void read_fasta_file(const char *filename, std::vector<char_type>& v){
 //    REQUIRE(all_good);
 //}
 
-
 TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
 {
     size_t w = 2;
@@ -177,7 +254,7 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     for (auto& phrase : dict)
     {
         for (auto& c : phrase)
-        { dict2.push_back(c); }
+        { dict2.push_back(c); } 
         dict2.push_back(EndOfWord);
     }
     dict2.push_back(EndOfDict);
