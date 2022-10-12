@@ -130,6 +130,15 @@ public:
             std::size_t next_row_pos = (r + 1) * columns;
             return (rank(next_row_pos) - rank(curr_row_pos));
         }
+
+        bool non_zero(std::size_t r, dict_data_type c)
+        {
+            if (not built) { build_static_structures(); }
+
+            std::size_t pos = (r * columns) + c;
+            assert(r < rows and c < columns);
+            return non_zero_positions[pos];
+        }
         
         void print()
         {
@@ -372,8 +381,6 @@ public:
                 range_start += c_count.second;
             }
         }
-
-        Q.print();
     }
     
     void build_W() {

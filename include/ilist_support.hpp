@@ -52,7 +52,7 @@ public:
         std::vector<uint_t> out_ilist;
         for (std::size_t r = 0; r < pfp.M.size(); r++)
         {
-            if (pfp.Q(r, c).second != 0)
+            if (pfp.Q.non_zero(r, c))
             {
                 // easy case
                 if (pfp.Q.elements_in_row(r) == 1)
