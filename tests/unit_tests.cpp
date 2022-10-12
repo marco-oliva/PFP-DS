@@ -243,18 +243,42 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
                               'A','C','G','T','T','C','G','T','G','A','C','T','A','G','T','T','C','C','G','G','G','A','C','T','A','A','C','#',
                               'A','C','C','T','T','C','G','C','A','C','C','T','A','G','T','C','C','G','G','G','A','G','T','T','A','C','#','#'
                               };
+    
     std::vector<std::string> dict
     {
-        "##AC", "AC##", "AC#AAC", "AC#AC", "ACCTAGT", "ACCTTCG", "ACG", "ACTAAC", "ACTAGT", "ACTTCG",
-        "CGCAAC", "CGCAC", "CGGAATAGT", "CGGGAC", "CGGGAGGT", "CGGGAGT", "CGT", "GTAAC", "GTCAC", "GTCCG",
-        "GTGAC", "GTTAAC", "GTTAC", "GTTCCG", "GTTCG", "GTTTAC",
+    "##AC", // 0
+    "AC##", // 1
+    "AC#AAC", // 2
+    "AC#AC", // 3
+    "ACCTAGT", // 4
+    "ACCTTCG", // 5
+    "ACG", // 6
+    "ACTAAC", // 7
+    "ACTAGT", // 8
+    "ACTTCG", // 9
+    "CGCAAC", // 10
+    "CGCAC", // 11
+    "CGGAATAGT", // 12
+    "CGGGAC", // 13
+    "CGGGAGGT", // 14
+    "CGGGAGT", // 15
+    "CGT", // 16
+    "GTAAC", // 17
+    "GTCAC", // 18
+    "GTCCG", // 19
+    "GTGAC", // 20
+    "GTTAAC", // 21
+    "GTTAC", // 22
+    "GTTCCG", // 23
+    "GTTCG", // 24
+    "GTTTAC", // 25
     };
     
     std::vector<uint8_t> dict2;
     for (auto& phrase : dict)
     {
         for (auto& c : phrase)
-        { dict2.push_back(c); } 
+        { dict2.push_back(c); }
         dict2.push_back(EndOfWord);
     }
     dict2.push_back(EndOfDict);
@@ -270,11 +294,13 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     std::vector<uint_t> frequencies(dict.size() + 1, 0);
     for (auto& p_id : parse) { frequencies[p_id] += 1; }
     
+    std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
+    
     // build pfp
     parse.push_back(0);
     pfpds::pf_parsing<uint8_t> pfp(dict2, parse, frequencies, w);
     
-    REQUIRE(true);
+    REQUIRE(pfp.dict.colex_id == colex_id);
 }
 
 //------------------------------------------------------------------------------

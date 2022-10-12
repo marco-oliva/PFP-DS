@@ -47,6 +47,88 @@ public:
         uint_t right;
     };
     
+    class Q_table
+    {
+    private:
+        std::vector<std::size_t> values;
+        sdsl::sd_vector<> non_zero_positions;
+        sdsl::rank_support_sd<> rank;
+        sdsl::select_support_sd<> select;
+        std::size_t rows;
+        dict_data_type columns;
+        
+        sdsl::sd_vector_builder builder;
+        bool built = false;
+
+        std::size_t last_pos_set = 0;
+
+    public:
+        
+        Q_table() {}
+        
+        Q_table(std::size_t rows, dict_data_type columns, std::size_t non_zero_positions)
+            : rows(rows), columns(columns), builder(rows * columns, non_zero_positions)
+        {}
+
+        void init(std::size_t rows_, dict_data_type columns_, std::size_t non_zero_positions_)
+        {
+            this->rows = rows_;
+            this->columns = columns_;
+            this->builder = sdsl::sd_vector_builder(rows * columns, non_zero_positions_);
+        }
+
+        void append(std::size_t r, dict_data_type c, std::size_t v)
+        {
+            assert(not built);
+            assert(v != 0);
+            assert(r < rows and c < columns);
+
+            std::size_t pos = (r * columns) + c;
+            assert(last_pos_set == 0 or pos > last_pos_set);
+
+            last_pos_set = pos;
+
+            values.push_back(v);
+            builder.set(pos);
+        }
+
+        void build_static_structures()
+        {
+            if (built) { return; } built = true;
+
+            non_zero_positions = sdsl::sd_vector(builder);
+            sdsl::util::init_support(rank, &non_zero_positions);
+            sdsl::util::init_support(select, &non_zero_positions);
+        }
+
+        std::size_t operator()(std::size_t r, dict_data_type c)
+        {
+            if (not built) { build_static_structures(); }
+
+            std::size_t pos = (r * columns) + c;
+            assert(r < rows and c < columns);
+
+            if (non_zero_positions[pos]) { return values[rank(pos)]; }
+            else { return 0; }
+        }
+        
+        void print()
+        {
+            for (std::size_t i = 0; i < rows; i++)
+            {
+                std::size_t plotted = 0;
+                for (std::size_t j = 0; j < columns; j++)
+                {
+                    
+                    auto v = this->operator()(i,j);
+                    if (v != 0) { std::cout << char(j) << ":" << v << "\t"; plotted += 1; }
+                }
+                if (plotted == 0) { std::cout << "empty line -----"; }
+                std::cout << std::endl;
+            }
+        }
+    };
+    
     dictionary<dict_data_type> dict;
     parse pars;
     std::vector<uint_t> freq;
@@ -57,6 +139,8 @@ public:
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
     sdsl::bit_vector::select_1_type b_bwt_select_1;
     std::vector<M_entry_t> M;
+    
+    Q_table Q;
     
     wt_t w_wt;
     
@@ -94,7 +178,7 @@ public:
         _elapsed_time(build_W());
 
         // Clear unnecessary elements
-        clear_unnecessary_elements();
+        // clear_unnecessary_elements();
     }
     
     pf_parsing( std::string filename, size_t w_):
@@ -120,7 +204,7 @@ public:
         _elapsed_time(build_W());
 
         // Clear unnecessary elements
-        clear_unnecessary_elements();
+        // clear_unnecessary_elements();
     }
     
     void compute_b_p() {
@@ -157,63 +241,6 @@ public:
         //n += w; // + w because n is the length including the last w markers
         //n += w - 1; // Changed after changind b_d in dict // -1 is for the first dollar + w because n is the length including the last w markers
     }
-
-    class Q_table
-    {
-    private:
-        std::vector<std::size_t> values;
-        sdsl::sd_vector<> non_zero_positions;
-        sdsl::rank_support_sd<> rank;
-        sdsl::select_support_sd<> select;
-        std::size_t rows;
-        dict_data_type columns;
-
-        sdsl::sd_vector_builder builder;
-        bool built = false;
-
-        std::size_t last_pos_set = 0;
-
-    public:
-        Q_table(std::size_t rows, dict_data_type columns, std::size_t non_zero_positions)
-        : rows(rows), columns(columns), builder(rows * columns, non_zero_positions)
-        {}
-
-
-        void append(std::size_t r, dict_data_type c, std::size_t v)
-        {
-            assert(not built);
-            assert(v != 0);
-            assert(r < rows and c < columns);
-
-            std::size_t pos = (r * columns) + c;
-            assert(last_pos_set == 0 or pos > last_pos_set);
-
-            last_pos_set = pos;
-
-            values.push_back(v);
-            builder.set(pos);
-        }
-
-        void build_static_structures()
-        {
-            if (built) { return; } built = true;
-
-            non_zero_positions = sdsl::sd_vector(builder);
-            sdsl::util::init_support(rank, &non_zero_positions);
-            sdsl::util::init_support(select, &non_zero_positions);
-        }
-
-        std::size_t operator()(std::size_t r, dict_data_type c)
-        {
-            if (not built) { build_static_structures(); }
-
-            std::size_t pos = (r * columns) + c;
-            assert(r < rows and c < columns);
-
-            if (non_zero_positions[pos]) { return values[rank(pos)]; }
-            else { return 0; }
-        }
-    };
 
     void build_b_bwt_and_M_and_Q()
     {
@@ -286,6 +313,55 @@ public:
         // it looks like I can iterate over M, for i in (m.left, m.right) get the phrase from inv_colex_id and
         // extract the character preceding the suffix using m.len
 
+        // First count the number of non-zero elements for the sparse matrix.
+        std::set<dict_data_type> alphabet_els;
+        std::size_t nz = 0;
+        std::cout << "----------" << std::endl;
+        for (auto& m : M)
+        {
+            for (std::size_t r = m.left; r <= m.right; r++)
+            {
+                std::cout << r << " ";
+                auto phrase = dict.colex_id[r];
+                std::size_t phrase_start = dict.select_b_d(phrase + 1);
+                std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
+                dict_data_type c = dict.d[phrase_start + (phrase_length - m.len - 1)];
+                alphabet_els.insert(c);
+            }
+            nz += alphabet_els.size();
+            alphabet_els.clear();
+            
+            std::cout << std::endl;
+        }
+        
+        // Now create the table
+        Q.init(M.size(), dict.alphabet_size, nz);
+        std::size_t row = 0;
+        std::map<dict_data_type, std::size_t> phrase_counts;
+        for (auto& m : M)
+        {
+            for (std::size_t r = m.left; r <= m.right; r++)
+            {
+                auto phrase = dict.colex_id[r];
+                std::size_t phrase_start = dict.select_b_d(phrase + 1);
+                std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
+                dict_data_type c = dict.d[phrase_start + (phrase_length - m.len - 1)];
+                phrase_counts[c]++;
+            }
+            
+            // update matrix row
+            for (auto const& c : phrase_counts)
+            {
+                Q.append(row, c.first, c.second);
+            }
+            phrase_counts.clear();
+            row++;
+        }
+        
+        std::cout << "==============================" << std::endl;
+        Q.print();
+        std::cout << "==============================" << std::endl;
+        
     }
     
     void build_W() {

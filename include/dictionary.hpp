@@ -230,6 +230,7 @@ public:
     void compute_colex_da()
     {
         colex_id.resize(n_phrases());
+        inv_colex_id.resize(n_phrases());
         
 //        std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
 //        for (long long int i = 0, j = 0; i < d.size(); ++i)
@@ -306,9 +307,6 @@ public:
 //        }
 
         // ---------- just sort the reversed phrases
-        std::vector<uint_t> inv_colex_id_test(n_phrases());
-        std::vector<uint_t> colex_id_test(n_phrases());
-        
         std::vector<std::pair<std::vector<data_type>,uint32_t>> rev_dict(n_phrases());
         std::size_t i = 0;
         std::size_t rank = 0;
@@ -323,7 +321,7 @@ public:
         std::sort(rev_dict.begin(),rev_dict.end());
         
         for (i = 0; i < colex_id.size(); i++) { colex_id[i] = rev_dict[i].second; }
-        for (i = 0; i < inv_colex_id_test.size(); i++) { inv_colex_id_test[colex_id[i]] = i; }
+        for (i = 0; i < colex_id.size(); i++) { inv_colex_id[colex_id[i]] = i; }
         
         // check
 //        assert(inv_colex_id.size() == inv_colex_id_test.size());
@@ -339,13 +337,8 @@ public:
         colex_daD.resize(d.size());
         for (i = 0; i < colex_daD.size(); ++i)
         {
-            colex_daD[i] = inv_colex_id_test.at(daD[i] % inv_colex_id_test.size());
+            colex_daD[i] = inv_colex_id.at(daD[i] % inv_colex_id.size());
         }
-        
-        colex_id.clear();
-
-        inv_colex_id.clear();
-        inv_colex_id.insert(inv_colex_id.end(), inv_colex_id_test.begin(), inv_colex_id_test.end());
     }
     
     // Serialize to a stream.
