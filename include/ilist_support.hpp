@@ -47,12 +47,21 @@ public:
 
     size_t size() const { return pfp.n; }
 
-    std::vector<std::size_t> operator()(dict_data_type c)
+    std::vector<uint_t> operator()(dict_data_type c)
     {
+        std::vector<uint_t> out_ilist;
         for (std::size_t r = 0; r < pfp.M.size(); r++)
         {
-        
+            if (pfp.Q.elements_in_row(r) == 1 and pfp.Q(r, c) != 0)
+            {
+                for (uint_t e = pfp.M[r].l_left; e <= pfp.M[r].l_right; e++)
+                {
+                    out_ilist.push_back(e);
+                }
+            }
         }
+        
+        return out_ilist;
     }
 };
 

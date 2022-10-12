@@ -114,6 +114,15 @@ public:
             else { return 0; }
         }
         
+        dict_data_type elements_in_row(std::size_t r)
+        {
+            if (not built) { build_static_structures(); }
+            
+            std::size_t curr_row_pos = r * columns;
+            std::size_t next_row_pos = (r + 1) * columns;
+            return (rank(next_row_pos) - rank(curr_row_pos));
+        }
+        
         void print()
         {
             for (std::size_t i = 0; i < rows; i++)
@@ -304,9 +313,6 @@ public:
                     }
                 }
                 
-                l_left = l_right + 1;
-                l_right = l_left;
-                
                 // Computing M
                 size_t right = i - 1;
                 M_entry_t m;
@@ -317,6 +323,9 @@ public:
                 m.l_right = l_right;
                 
                 M.push_back(m);
+                
+                l_left = l_right + 1;
+                l_right = l_left;
             }
         }
         
