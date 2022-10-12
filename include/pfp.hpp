@@ -48,11 +48,11 @@ public:
         uint_t l_left;
         uint_t l_right;
     };
-    
+
     class Q_table
     {
     private:
-        std::vector<std::size_t> values;
+        std::vector<std::pair<std::size_t, std::size_t>> values;
         sdsl::sd_vector<> non_zero_positions;
         sdsl::rank_support_sd<> rank;
         sdsl::select_support_sd<> select;
@@ -79,10 +79,10 @@ public:
             this->builder = sdsl::sd_vector_builder(rows * columns, non_zero_positions_);
         }
 
-        void append(std::size_t r, dict_data_type c, std::size_t v)
+        void append(std::size_t r, dict_data_type c, std::pair<std::size_t, std::size_t> v)
         {
             assert(not built);
-            assert(v != 0);
+            assert(v.second != 0);
             assert(r < rows and c < columns);
 
             std::size_t pos = (r * columns) + c;
@@ -103,7 +103,7 @@ public:
             sdsl::util::init_support(select, &non_zero_positions);
         }
 
-        std::size_t operator()(std::size_t r, dict_data_type c)
+        std::pair<std::size_t, std::size_t> operator()(std::size_t r, dict_data_type c)
         {
             if (not built) { build_static_structures(); }
 
@@ -111,7 +111,7 @@ public:
             assert(r < rows and c < columns);
 
             if (non_zero_positions[pos]) { return values[rank(pos)]; }
-            else { return 0; }
+            else { return std::make_pair(0,0); }
         }
         
         dict_data_type elements_in_row(std::size_t r)
@@ -132,7 +132,7 @@ public:
                 {
                     
                     auto v = this->operator()(i,j);
-                    if (v != 0) { std::cout << char(j) << ":" << v << "\t"; plotted += 1; }
+                    if (v != std::make_pair(0,0)) { std::cout << char(j) << ":" << v << "\t"; plotted += 1; }
                 }
                 if (plotted == 0) { std::cout << "empty line -----"; }
                 std::cout << std::endl;
@@ -334,43 +334,55 @@ public:
         b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
 
         // First count the number of non-zero elements for the sparse matrix.
-        std::set<dict_data_type> alphabet_els;
         std::size_t nz = 0;
         for (auto& m : M)
         {
+            std::vector<dict_data_type> chars_encountered;
             for (std::size_t r = m.left; r <= m.right; r++)
             {
                 auto phrase = dict.colex_id[r];
                 std::size_t phrase_start = dict.select_b_d(phrase + 1);
                 std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
                 dict_data_type c = dict.d[phrase_start + (phrase_length - m.len - 1)];
-                alphabet_els.insert(c);
+
+                if (chars_encountered.empty() or chars_encountered.back() != c)
+                {
+                    chars_encountered.push_back(c);
+                }
             }
-            nz += alphabet_els.size();
-            alphabet_els.clear();
+            nz += chars_encountered.size();
         }
         
         // Now create the table
         Q.init(M.size(), dict.alphabet_size, nz);
-        std::size_t row = 0;
-        std::map<dict_data_type, std::size_t> phrase_counts;
-        for (auto& m : M)
+
+        for (std::size_t row = 0; row < M.size(); row++)
         {
+            const M_entry_t& m = M[row];
+
+            std::vector<std::pair<dict_data_type, std::size_t>> phrase_counts;
             for (std::size_t r = m.left; r <= m.right; r++)
             {
                 auto phrase = dict.colex_id[r];
                 std::size_t phrase_start = dict.select_b_d(phrase + 1);
                 std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
                 dict_data_type c = dict.d[phrase_start + (phrase_length - m.len - 1)];
-                phrase_counts[c]++;
+
+                if (phrase_counts.empty() or phrase_counts.back().first != c)
+                {
+                    phrase_counts.push_back(std::make_pair(c, 1));
+                }
+                else { phrase_counts.back().second += 1; }
             }
             
             // update matrix row
-            for (auto const& c : phrase_counts)
+            std::size_t range_start = m.left;
+            for (auto const& c_count : phrase_counts)
             {
-                Q.append(row, c.first, c.second);
+                Q.append(row, c_count.first, std::make_pair(range_start,c_count.second));
+                range_start += c_count.second;
             }
-            phrase_counts.clear();
+
             row++;
         }
     }

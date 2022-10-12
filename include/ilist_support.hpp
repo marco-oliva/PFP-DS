@@ -52,12 +52,19 @@ public:
         std::vector<uint_t> out_ilist;
         for (std::size_t r = 0; r < pfp.M.size(); r++)
         {
-            if (pfp.Q.elements_in_row(r) == 1 and pfp.Q(r, c) != 0)
+            if (pfp.Q(r, c).second != 0)
             {
-                for (uint_t e = pfp.M[r].l_left; e <= pfp.M[r].l_right; e++)
+                // easy case
+                if (pfp.Q.elements_in_row(r) == 1)
                 {
-                    out_ilist.push_back(e);
+                    for (uint_t e = pfp.M[r].l_left; e <= pfp.M[r].l_right; e++)
+                    {
+                        out_ilist.push_back(e);
+                    }
                 }
+                // hard case, suffix is preceded by multiple characters
+                // first figure out the colex subrange for the character I want.
+
             }
         }
         
