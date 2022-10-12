@@ -82,7 +82,7 @@ public:
         void append(std::size_t r, dict_data_type c, std::pair<std::size_t, std::size_t> v)
         {
             assert(not built);
-            assert(v.second != 0);
+            assert(not (v.first == 0 and v.second == 0));
             assert(r < rows and c < columns);
 
             std::size_t pos = (r * columns) + c;
