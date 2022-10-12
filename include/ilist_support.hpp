@@ -63,6 +63,21 @@ public:
                     }
                 }
                 // hard case, suffix is preceded by multiple characters
+                else
+                {
+                    // colex subrange of the character I want
+                    std::pair<std::size_t, std::size_t> colex_subrange = std::make_pair(pfp.Q(r, c));
+                    colex_subrange.second = colex_subrange.first + colex_subrange.second - 1; // Q stores left, length
+
+                    while (true)
+                    {
+                        const auto k = pfp.w_wt.range_select(colex_subrange.first, colex_subrange.second, 1);
+                        break;
+                    }
+                }
+                // get the colex subrange.
+
+
                 // first figure out the colex subrange for the character I want.
 
             }
