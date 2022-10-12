@@ -309,10 +309,6 @@ public:
         b_bwt_rank_1 = sdsl::bit_vector::rank_1_type(&b_bwt);
         b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
 
-        // now build Q
-        // it looks like I can iterate over M, for i in (m.left, m.right) get the phrase from inv_colex_id and
-        // extract the character preceding the suffix using m.len
-
         // First count the number of non-zero elements for the sparse matrix.
         std::set<dict_data_type> alphabet_els;
         std::size_t nz = 0;
