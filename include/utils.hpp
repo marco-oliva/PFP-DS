@@ -319,13 +319,13 @@ void my_load(std::vector<X> &x, std::istream &in, typename std::enable_if<std::i
 /*!
  * op the operation that we want to measure
  */
-#define _elapsed_time(op)                                                                                               \
-  ({                                                                                                                    \
-    std::chrono::high_resolution_clock::time_point t_insert_start = std::chrono::high_resolution_clock::now();          \
-    op;                                                                                                                 \
-    std::chrono::high_resolution_clock::time_point t_insert_end = std::chrono::high_resolution_clock::now();            \
-    spdlog::info("Elapsed time (s): ", std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count()); \
-    std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count();                                \
+#define _elapsed_time(op)                                                                                                       \
+  ({                                                                                                                            \
+    std::chrono::high_resolution_clock::time_point t_insert_start = std::chrono::high_resolution_clock::now();                  \
+    op;                                                                                                                         \
+    std::chrono::high_resolution_clock::time_point t_insert_end = std::chrono::high_resolution_clock::now();                    \
+    spdlog::info("Elapsed time (s): {}", std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count());  \
+    std::chrono::duration<double, std::ratio<1>>(t_insert_end - t_insert_start).count();                                        \
   })
 
 //------------------------------------------------------------------------------
