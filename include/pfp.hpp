@@ -204,7 +204,7 @@ public:
         _elapsed_time(build_W());
 
         // Clear unnecessary elements
-        // clear_unnecessary_elements();
+        clear_unnecessary_elements();
     }
     
     void compute_b_p() {
@@ -316,12 +316,10 @@ public:
         // First count the number of non-zero elements for the sparse matrix.
         std::set<dict_data_type> alphabet_els;
         std::size_t nz = 0;
-        std::cout << "----------" << std::endl;
         for (auto& m : M)
         {
             for (std::size_t r = m.left; r <= m.right; r++)
             {
-                std::cout << r << " ";
                 auto phrase = dict.colex_id[r];
                 std::size_t phrase_start = dict.select_b_d(phrase + 1);
                 std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
@@ -330,8 +328,6 @@ public:
             }
             nz += alphabet_els.size();
             alphabet_els.clear();
-            
-            std::cout << std::endl;
         }
         
         // Now create the table
@@ -357,11 +353,6 @@ public:
             phrase_counts.clear();
             row++;
         }
-        
-        std::cout << "==============================" << std::endl;
-        Q.print();
-        std::cout << "==============================" << std::endl;
-        
     }
     
     void build_W() {
@@ -388,6 +379,7 @@ public:
         dict.daD.clear();
         dict.colex_daD.clear();
         dict.colex_id.clear();
+        dict.inv_colex_id.clear();
         // pars.saP.clear(); // It is needed in sa_support
         //    dict.rmq_colex_daD.clear();
         //    dict.rMq_colex_daD.clear();
