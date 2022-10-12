@@ -45,37 +45,14 @@ public:
         : pfp(pfp_)
     { }
 
-    size_t size() const {
-        return pfp.n;
-    }
+    size_t size() const { return pfp.n; }
 
-    std::vector<std::size_t> operator()(std::size_t i) {
-        // i + 1 -> rank is for (0 ... i - 1) interval
-        const auto rank_i = pfp.b_bwt_rank_1(i + 1);
-        const auto lex_rank_i = rank_i - 1;
-        const auto interval_rank = i - pfp.b_bwt_select_1(rank_i); // lex rank - 0-based
-        const auto & m = pfp.M[lex_rank_i];
-    
-        // WT have 0 delimiter, lex smallest, so it shifted intervals
-        // rank + 1 because its 0-based and select is 1-based
-        const auto k = pfp.w_wt.range_select(m.left, m.right, interval_rank + 1);
-    
-        uint32_t p_i;
-        if (pfp.pars.saP[k + 1] > 0)
-            p_i = pfp.pars.saP[k + 1] - 1;
-        else
-            p_i = pfp.pars.p.size() - 2;
-    
-        size_t occ_k_next;
-        if (p_i + 2 > pfp.pars.p.size() - 1)
-            occ_k_next = pfp.n;
-        else
-            occ_k_next = pfp.select_b_p(p_i + 2); // start of next phrase in S
-    
-        if (occ_k_next < m.len)
-            return pfp.n - (m.len - occ_k_next);
-        else
-            return occ_k_next - m.len; // b_p starts with trigger string (occ_k_next - (m.len - pfp.w) - pfp.w)
+    std::vector<std::size_t> operator()(dict_data_type c)
+    {
+        for (std::size_t r = 0; r < pfp.M.size(); r++)
+        {
+        
+        }
     }
 };
 
