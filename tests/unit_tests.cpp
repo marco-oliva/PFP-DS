@@ -62,97 +62,97 @@ void read_fasta_file(const char *filename, std::vector<char_type>& v){
 #include <sa_support.hpp>
 #include <ilist_support.hpp>
 
-TEST_CASE( "Q matix 1", "Sparse Matrix" )
-{
-    std::vector<std::pair<std::size_t, std::size_t>> table_test =
-    {
-        {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
-        {4,0},{0,0},{1,0},{1,0},{3,0},{0,0},{0,0},
-        {0,0},{0,0},{0,0},{0,0},{3,0},{5,0},{0,0},
-        {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
-        {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{1,0},
-    };
-    std::size_t rows = 5;
-    uint8_t columns = 7;
-
-
-    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns, 13);
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            if (table_test[pos] != std::make_pair(0UL,0UL))
-            {
-                table.append(i, j, table_test[pos]);
-            }
-        }
-    }
-
-    bool all_good = true;
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            all_good = all_good and (table_test[pos] == table(i, j));
-        }
-    }
-    REQUIRE(all_good);
-
-    REQUIRE(table.elements_in_row(0) == 3);
-    REQUIRE(table.elements_in_row(1) == 4);
-    REQUIRE(table.elements_in_row(2) == 2);
-    REQUIRE(table.elements_in_row(3) == 0);
-    REQUIRE(table.elements_in_row(4) == 4);
-}
-
-TEST_CASE( "Q matix 2", "Sparse Matrix" )
-{
-    std::vector<std::pair<std::size_t, std::size_t>> table_test =
-    {
-            {1,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
-            {4,0},{1,0},{1,0},{1,0},{3,0},{1,0},{1,0},
-            {0,0},{0,0},{0,0},{0,0},{3,0},{0,0},{0,0},
-            {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
-            {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
-    };
-
-    std::size_t rows = 5;
-    uint8_t columns = 7;
-
-
-    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns, 15);
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            if (table_test[pos] != std::make_pair(0UL,0UL))
-            {
-                table.append(i, j, table_test[pos]);
-            }
-        }
-    }
-
-    bool all_good = true;
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            all_good = all_good and (table_test[pos] == table(i, j));
-        }
-    }
-    REQUIRE(all_good);
-
-    REQUIRE(table.elements_in_row(0) == 4);
-    REQUIRE(table.elements_in_row(1) == 7);
-    REQUIRE(table.elements_in_row(2) == 1);
-    REQUIRE(table.elements_in_row(3) == 0);
-    REQUIRE(table.elements_in_row(4) == 3);
-}
-
+//TEST_CASE( "Q matix 1", "Sparse Matrix" )
+//{
+//    std::vector<std::pair<std::size_t, std::size_t>> table_test =
+//    {
+//        {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
+//        {4,0},{0,0},{1,0},{1,0},{3,0},{0,0},{0,0},
+//        {0,0},{0,0},{0,0},{0,0},{3,0},{5,0},{0,0},
+//        {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+//        {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{1,0},
+//    };
+//    std::size_t rows = 5;
+//    uint8_t columns = 7;
+//
+//
+//    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns);
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            if (table_test[pos] != std::make_pair(0UL,0UL))
+//            {
+//                table.append(i, j, table_test[pos]);
+//            }
+//        }
+//    }
+//
+//    bool all_good = true;
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            all_good = all_good and (table_test[pos] == table(i, j));
+//        }
+//    }
+//    REQUIRE(all_good);
+//
+//    REQUIRE(table.elements_in_row(0) == 3);
+//    REQUIRE(table.elements_in_row(1) == 4);
+//    REQUIRE(table.elements_in_row(2) == 2);
+//    REQUIRE(table.elements_in_row(3) == 0);
+//    REQUIRE(table.elements_in_row(4) == 4);
+//}
+//
+//TEST_CASE( "Q matix 2", "Sparse Matrix" )
+//{
+//    std::vector<std::pair<std::size_t, std::size_t>> table_test =
+//    {
+//            {1,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
+//            {4,0},{1,0},{1,0},{1,0},{3,0},{1,0},{1,0},
+//            {0,0},{0,0},{0,0},{0,0},{3,0},{0,0},{0,0},
+//            {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+//            {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
+//    };
+//
+//    std::size_t rows = 5;
+//    uint8_t columns = 7;
+//
+//
+//    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns);
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            if (table_test[pos] != std::make_pair(0UL,0UL))
+//            {
+//                table.append(i, j, table_test[pos]);
+//            }
+//        }
+//    }
+//
+//    bool all_good = true;
+//    for (std::size_t i = 0; i < rows; i++)
+//    {
+//        for (uint8_t j = 0; j < columns; j++)
+//        {
+//            std::size_t pos = (i * columns) + j;
+//            all_good = all_good and (table_test[pos] == table(i, j));
+//        }
+//    }
+//    REQUIRE(all_good);
+//
+//    REQUIRE(table.elements_in_row(0) == 4);
+//    REQUIRE(table.elements_in_row(1) == 7);
+//    REQUIRE(table.elements_in_row(2) == 1);
+//    REQUIRE(table.elements_in_row(3) == 0);
+//    REQUIRE(table.elements_in_row(4) == 3);
+//}
+//
 //TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 //{
 //    std::vector<uint8_t> yeast;
@@ -244,82 +244,82 @@ TEST_CASE( "Q matix 2", "Sparse Matrix" )
 //    REQUIRE(all_good);
 //}
 
-//TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
-//{
-//    size_t w = 2;
-//
-//    std::vector<char> text = {'A','C','G','T','T','C','G','C','A','A','C','T','A','G','T','C','C','G','G','G','A','G','T','T','A','C','#',
-//                              'A','C','G','T','T','C','G','G','A','A','T','A','G','T','T','C','C','G','G','G','A','G','G','T','T','A','A','C','#',
-//                              'A','A','C','T','T','C','G','T','C','A','C','C','T','A','G','T','C','C','G','G','G','A','G','G','T','A','A','C','#',
-//                              'A','A','C','T','T','C','G','C','A','C','C','T','A','G','T','C','C','G','G','G','A','C','G','T','T','T','A','C','#',
-//                              'A','C','G','T','T','C','G','T','C','A','C','T','A','G','T','T','C','C','G','G','G','A','G','T','T','A','C','#',
-//                              'A','A','C','T','T','C','G','G','A','A','T','A','G','T','C','C','G','G','G','A','C','T','A','A','C','#',
-//                              'A','C','G','T','T','C','G','T','G','A','C','T','A','G','T','T','C','C','G','G','G','A','C','T','A','A','C','#',
-//                              'A','C','C','T','T','C','G','C','A','C','C','T','A','G','T','C','C','G','G','G','A','G','T','T','A','C','#','#'
-//                              };
-//
-//    std::vector<std::string> dict
-//    {
-//    "##AC", // 0
-//    "AC##", // 1
-//    "AC#AAC", // 2
-//    "AC#AC", // 3
-//    "ACCTAGT", // 4
-//    "ACCTTCG", // 5
-//    "ACG", // 6
-//    "ACTAAC", // 7
-//    "ACTAGT", // 8
-//    "ACTTCG", // 9
-//    "CGCAAC", // 10
-//    "CGCAC", // 11
-//    "CGGAATAGT", // 12
-//    "CGGGAC", // 13
-//    "CGGGAGGT", // 14
-//    "CGGGAGT", // 15
-//    "CGT", // 16
-//    "GTAAC", // 17
-//    "GTCAC", // 18
-//    "GTCCG", // 19
-//    "GTGAC", // 20
-//    "GTTAAC", // 21
-//    "GTTAC", // 22
-//    "GTTCCG", // 23
-//    "GTTCG", // 24
-//    "GTTTAC", // 25
-//    };
-//
-//    std::vector<uint8_t> dict2;
-//    for (auto& phrase : dict)
-//    {
-//        for (auto& c : phrase)
-//        { dict2.push_back(c); }
-//        dict2.push_back(EndOfWord);
-//    }
-//    dict2.push_back(EndOfDict);
-//
-//    std::vector<uint32_t> parse
-//    {
-//        0, 6, 16, 24, 10, 8, 19, 15, 22, 3, 6, 16, 24, 12, 23, 14, 21, 2, 9, 16, 18, 4, 19,
-//        14, 17, 2, 9, 11, 4, 19, 13, 6, 16, 25, 3, 6, 16, 24, 16, 18, 8, 23, 15, 22, 2, 9,
-//        12, 19, 13, 7, 3, 6, 16, 24, 16, 20, 8, 23, 13, 7, 3, 5, 11, 4, 19, 15, 22, 1
-//    };
-//    for (auto& p_id : parse) { p_id = p_id + 1; }
-//
-//    std::vector<uint_t> frequencies(dict.size() + 1, 0);
-//    for (auto& p_id : parse) { frequencies[p_id] += 1; }
-//
-//    std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
-//
-//    // build pfp
-//    parse.push_back(0);
-//    pfpds::pf_parsing<uint8_t> pfp(dict2, parse, frequencies, w);
-//
-//    pfpds::pfp_ilist_support<uint8_t> ilist(pfp);
-//
-//    std::vector<uint_t> ilist_T = ilist('C');
-//
-//    REQUIRE(pfp.dict.colex_id == colex_id);
-//}
+TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
+{
+    size_t w = 2;
+
+    std::vector<char> text = {'A','C','G','T','T','C','G','C','A','A','C','T','A','G','T','C','C','G','G','G','A','G','T','T','A','C','#',
+                              'A','C','G','T','T','C','G','G','A','A','T','A','G','T','T','C','C','G','G','G','A','G','G','T','T','A','A','C','#',
+                              'A','A','C','T','T','C','G','T','C','A','C','C','T','A','G','T','C','C','G','G','G','A','G','G','T','A','A','C','#',
+                              'A','A','C','T','T','C','G','C','A','C','C','T','A','G','T','C','C','G','G','G','A','C','G','T','T','T','A','C','#',
+                              'A','C','G','T','T','C','G','T','C','A','C','T','A','G','T','T','C','C','G','G','G','A','G','T','T','A','C','#',
+                              'A','A','C','T','T','C','G','G','A','A','T','A','G','T','C','C','G','G','G','A','C','T','A','A','C','#',
+                              'A','C','G','T','T','C','G','T','G','A','C','T','A','G','T','T','C','C','G','G','G','A','C','T','A','A','C','#',
+                              'A','C','C','T','T','C','G','C','A','C','C','T','A','G','T','C','C','G','G','G','A','G','T','T','A','C','#','#'
+                              };
+
+    std::vector<std::string> dict
+    {
+    "##AC", // 0
+    "AC##", // 1
+    "AC#AAC", // 2
+    "AC#AC", // 3
+    "ACCTAGT", // 4
+    "ACCTTCG", // 5
+    "ACG", // 6
+    "ACTAAC", // 7
+    "ACTAGT", // 8
+    "ACTTCG", // 9
+    "CGCAAC", // 10
+    "CGCAC", // 11
+    "CGGAATAGT", // 12
+    "CGGGAC", // 13
+    "CGGGAGGT", // 14
+    "CGGGAGT", // 15
+    "CGT", // 16
+    "GTAAC", // 17
+    "GTCAC", // 18
+    "GTCCG", // 19
+    "GTGAC", // 20
+    "GTTAAC", // 21
+    "GTTAC", // 22
+    "GTTCCG", // 23
+    "GTTCG", // 24
+    "GTTTAC", // 25
+    };
+
+    std::vector<uint8_t> dict2;
+    for (auto& phrase : dict)
+    {
+        for (auto& c : phrase)
+        { dict2.push_back(c); }
+        dict2.push_back(EndOfWord);
+    }
+    dict2.push_back(EndOfDict);
+
+    std::vector<uint32_t> parse
+    {
+        0, 6, 16, 24, 10, 8, 19, 15, 22, 3, 6, 16, 24, 12, 23, 14, 21, 2, 9, 16, 18, 4, 19,
+        14, 17, 2, 9, 11, 4, 19, 13, 6, 16, 25, 3, 6, 16, 24, 16, 18, 8, 23, 15, 22, 2, 9,
+        12, 19, 13, 7, 3, 6, 16, 24, 16, 20, 8, 23, 13, 7, 3, 5, 11, 4, 19, 15, 22, 1
+    };
+    for (auto& p_id : parse) { p_id = p_id + 1; }
+
+    std::vector<uint_t> frequencies(dict.size() + 1, 0);
+    for (auto& p_id : parse) { frequencies[p_id] += 1; }
+
+    std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
+
+    // build pfp
+    parse.push_back(0);
+    pfpds::pf_parsing<uint8_t> pfp(dict2, parse, frequencies, w);
+
+    pfpds::pfp_ilist_support<uint8_t> ilist(pfp);
+
+    std::vector<uint_t> ilist_T = ilist('C');
+
+    REQUIRE(pfp.dict.colex_id == colex_id);
+}
 
 //------------------------------------------------------------------------------
 

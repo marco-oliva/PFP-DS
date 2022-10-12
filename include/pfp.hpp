@@ -53,6 +53,7 @@ public:
     {
     private:
         std::vector<std::pair<std::size_t, std::size_t>> values;
+        std::vector<std::pair<std::size_t, std::pair<std::size_t, std::size_t>>> non_zero_tmp_queue;
         sdsl::sd_vector<> non_zero_positions;
         sdsl::rank_support_sd<> rank;
         sdsl::select_support_sd<> select;
@@ -68,15 +69,14 @@ public:
         
         Q_table() {}
         
-        Q_table(std::size_t rows, dict_data_type columns, std::size_t non_zero_positions)
-            : rows(rows), columns(columns), builder(rows * columns, non_zero_positions)
+        Q_table(std::size_t rows, dict_data_type columns)
+            : rows(rows), columns(columns)
         {}
 
-        void init(std::size_t rows_, dict_data_type columns_, std::size_t non_zero_positions_)
+        void init(std::size_t rows_, dict_data_type columns_)
         {
             this->rows = rows_;
             this->columns = columns_;
-            this->builder = sdsl::sd_vector_builder(rows * columns, non_zero_positions_);
         }
 
         void append(std::size_t r, dict_data_type c, std::pair<std::size_t, std::size_t> v)
@@ -90,13 +90,21 @@ public:
 
             last_pos_set = pos;
 
-            values.push_back(v);
-            builder.set(pos);
+            non_zero_tmp_queue.emplace_back(pos, v);
         }
 
         void build_static_structures()
         {
             if (built) { return; } built = true;
+
+            this->builder = sdsl::sd_vector_builder(rows * columns, non_zero_tmp_queue.size());
+
+            values.clear();
+            for (auto& to_insert : non_zero_tmp_queue)
+            {
+                builder.set(to_insert.first);
+                values.push_back(to_insert.second);
+            }
 
             non_zero_positions = sdsl::sd_vector(builder);
             sdsl::util::init_support(rank, &non_zero_positions);
@@ -132,7 +140,7 @@ public:
                 {
                     
                     auto v = this->operator()(i,j);
-                    if (v != std::make_pair(0,0)) { std::cout << char(j) << ":" << v << "\t"; plotted += 1; }
+                    if (v != std::make_pair(0UL,0UL)) { std::cout << char(j) << ": (" << v.first << "," << v.second << ")\t"; plotted += 1; }
                 }
                 if (plotted == 0) { std::cout << "empty line -----"; }
                 std::cout << std::endl;
@@ -333,28 +341,8 @@ public:
         b_bwt_rank_1 = sdsl::bit_vector::rank_1_type(&b_bwt);
         b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
 
-        // First count the number of non-zero elements for the sparse matrix.
-        std::size_t nz = 0;
-        for (auto& m : M)
-        {
-            std::vector<dict_data_type> chars_encountered;
-            for (std::size_t r = m.left; r <= m.right; r++)
-            {
-                auto phrase = dict.colex_id[r];
-                std::size_t phrase_start = dict.select_b_d(phrase + 1);
-                std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
-                dict_data_type c = dict.d[phrase_start + (phrase_length - m.len - 1)];
-
-                if (chars_encountered.empty() or chars_encountered.back() != c)
-                {
-                    chars_encountered.push_back(c);
-                }
-            }
-            nz += chars_encountered.size();
-        }
-        
-        // Now create the table
-        Q.init(M.size(), dict.alphabet_size, nz);
+        // now build Q
+        Q.init(M.size(), dict.alphabet_size);
 
         for (std::size_t row = 0; row < M.size(); row++)
         {
@@ -379,12 +367,13 @@ public:
             std::size_t range_start = m.left;
             for (auto const& c_count : phrase_counts)
             {
-                Q.append(row, c_count.first, std::make_pair(range_start,c_count.second));
+                std::pair<std::size_t, std::size_t> q_element = std::make_pair(range_start, c_count.second);
+                Q.append(row, c_count.first, q_element);
                 range_start += c_count.second;
             }
-
-            row++;
         }
+
+        Q.print();
     }
     
     void build_W() {
