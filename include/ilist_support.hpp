@@ -65,15 +65,45 @@ public:
                 // hard case, suffix is preceded by multiple characters
                 else
                 {
-                    // colex subrange of the character I want
-                    std::pair<std::size_t, std::size_t> colex_subrange = std::make_pair(pfp.Q(r, c));
-                    colex_subrange.second = colex_subrange.first + colex_subrange.second - 1; // Q stores left, length
-
-                    while (true)
+                    auto start = pfp.w_wt.range_select(pfp.M[r].left, pfp.M[r].right, 1);
+                    std::size_t lex_rank = pfp.M[r].l_left;
+                    
+                    uint_t p_it = 0;
+                    while (lex_rank <= pfp.M[r].l_right)
                     {
-                        const auto k = pfp.w_wt.range_select(colex_subrange.first, colex_subrange.second, 1);
-                        break;
+                        // colex subrange of the character we want
+                        std::pair<std::size_t, std::size_t> colex_subrange = pfp.Q(r, c);
+                        colex_subrange.second = colex_subrange.first + colex_subrange.second - 1; // Q stores left, length
+                        
+                        auto curr = pfp.w_wt.range_select(colex_subrange.first,colex_subrange.second, p_it + 1);
+                        
+                        uint_t tot_prev = 0;
+                        for (dict_data_type col = 0; col < pfp.Q.elements_in_row(r); col++)
+                        {
+                            if (col != c)
+                            {
+                                dict_data_type active_col = pfp.Q.select_in_row(col);
+                                std::pair<std::size_t, std::size_t> sr = pfp.Q(r, col);
+                                sr.second = sr.first + sr.second - 1;
+                                tot_prev += pfp.w_wt.range_count(sr.first, sr.second, curr);
+                            }
+                        }
+                        
+                        // print lex_rank
+                        out_ilist.push_back(lex_rank + tot_prev);
+                        
+                        // update lex_rank
+                        lex_rank += tot_prev + 1;
                     }
+                    
+                    
+                    
+                    while (partial_ilist.size() < num_of_c)
+                    {
+                        auto next = pfp.w_wt.range_select(pfp.M[r].left, pfp.M[r].right, 1);
+                    }
+                    
+                    
                 }
                 // get the colex subrange.
 
