@@ -175,6 +175,7 @@ public:
     std::vector<uint_t> freq;
     size_t n; // Size of the text
     size_t w; // Size of the window
+    size_t shift;
     
     sdsl::bit_vector b_bwt;
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
@@ -197,11 +198,12 @@ public:
     pf_parsing(std::vector<uint8_t> &d_,
     std::vector<uint32_t> &p_,
     std::vector<uint_t> &freq_,
-    size_t w_) :
+    size_t w_, std::size_t shift = 0) :
     dict(d_, w_),
     pars(p_, dict.n_phrases() + 1),
     freq(freq_),
-    w(w_)
+    w(w_),
+    shift(shift)
     {
         // Uploading the frequency file
         assert(freq[0] == 0);
@@ -222,11 +224,12 @@ public:
         // clear_unnecessary_elements();
     }
     
-    pf_parsing( std::string filename, size_t w_):
+    pf_parsing( std::string filename, size_t w_, std::size_t shift = 0):
     dict(filename, w_),
     pars(filename,dict.n_phrases()+1),
     freq(dict.n_phrases() + 1,0),
-    w(w_)
+    w(w_),
+    shift(shift)
     {
         // Generating freq
         for (std::size_t i = 0; i < pars.p.size(); i++) { freq[pars.p[i]] += 1; }

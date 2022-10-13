@@ -50,6 +50,9 @@ public:
     std::vector<uint_t> operator()(dict_data_type c)
     {
         std::vector<uint_t> out_ilist;
+
+        if (c == 0) {out_ilist.push_back(1); return out_ilist; }
+
         for (std::size_t r = 0; r < pfp.M.size(); r++)
         {
             if (pfp.Q.non_zero(r, c))
