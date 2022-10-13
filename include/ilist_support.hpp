@@ -65,22 +65,26 @@ public:
                 // hard case, suffix is preceded by multiple characters
                 else
                 {
+                    std::pair<std::size_t, std::size_t> colex_subrange = pfp.Q(r, c);
+                    colex_subrange.second = colex_subrange.first + colex_subrange.second - 1;
+                    uint_t num_of_c  = pfp.w_wt.range_count(colex_subrange.first, colex_subrange.second, pfp.w_wt.size());
+                    
                     std::size_t lex_rank = pfp.M[r].l_left;
                     
                     uint_t p_it = 0;
-                    while (lex_rank <= pfp.M[r].l_right)
+                    while (p_it < num_of_c)
                     {
-                        std::pair<std::size_t, std::size_t> colex_subrange = pfp.Q(r, c);
-                        colex_subrange.second = colex_subrange.first + colex_subrange.second - 1; // Q stores left, length
+                        std::pair<std::size_t, std::size_t> c_sr = pfp.Q(r, c);
+                        c_sr.second = c_sr.first + c_sr.second - 1; // Q stores left, length
                         
-                        auto curr = pfp.w_wt.range_select(colex_subrange.first,colex_subrange.second, p_it + 1);
+                        auto curr = pfp.w_wt.range_select(c_sr.first, c_sr.second, p_it + 1);
                         
                         uint_t tot_prev = 0;
                         for (dict_data_type col = 0; col < pfp.Q.elements_in_row(r); col++)
                         {
-                            if (col != c)
+                            dict_data_type active_col = pfp.Q.select_in_row(r,col);
+                            if (active_col != c)
                             {
-                                dict_data_type active_col = pfp.Q.select_in_row(r,col);
                                 std::pair<std::size_t, std::size_t> sr = pfp.Q(r, active_col);
                                 sr.second = sr.first + sr.second - 1;
                                 tot_prev += pfp.w_wt.range_count(sr.first, sr.second, curr);
@@ -88,10 +92,9 @@ public:
                         }
                         
                         // print lex_rank
-                        out_ilist.push_back(lex_rank + tot_prev);
+                        out_ilist.push_back(lex_rank + p_it + tot_prev);
                         
-                        // update lex_rank
-                        lex_rank += tot_prev + 1;
+                        p_it++;
                     }
                 }
             }
