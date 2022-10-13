@@ -65,13 +65,11 @@ public:
                 // hard case, suffix is preceded by multiple characters
                 else
                 {
-                    auto start = pfp.w_wt.range_select(pfp.M[r].left, pfp.M[r].right, 1);
                     std::size_t lex_rank = pfp.M[r].l_left;
                     
                     uint_t p_it = 0;
                     while (lex_rank <= pfp.M[r].l_right)
                     {
-                        // colex subrange of the character we want
                         std::pair<std::size_t, std::size_t> colex_subrange = pfp.Q(r, c);
                         colex_subrange.second = colex_subrange.first + colex_subrange.second - 1; // Q stores left, length
                         
@@ -82,8 +80,8 @@ public:
                         {
                             if (col != c)
                             {
-                                dict_data_type active_col = pfp.Q.select_in_row(col);
-                                std::pair<std::size_t, std::size_t> sr = pfp.Q(r, col);
+                                dict_data_type active_col = pfp.Q.select_in_row(r,col);
+                                std::pair<std::size_t, std::size_t> sr = pfp.Q(r, active_col);
                                 sr.second = sr.first + sr.second - 1;
                                 tot_prev += pfp.w_wt.range_count(sr.first, sr.second, curr);
                             }
@@ -95,21 +93,7 @@ public:
                         // update lex_rank
                         lex_rank += tot_prev + 1;
                     }
-                    
-                    
-                    
-                    while (partial_ilist.size() < num_of_c)
-                    {
-                        auto next = pfp.w_wt.range_select(pfp.M[r].left, pfp.M[r].right, 1);
-                    }
-                    
-                    
                 }
-                // get the colex subrange.
-
-
-                // first figure out the colex subrange for the character I want.
-
             }
         }
         
