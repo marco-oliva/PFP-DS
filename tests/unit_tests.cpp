@@ -389,9 +389,15 @@ TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
     bool all_good = true;
     for (auto const& il : ilists)
     {
-        std::vector<uint_t> pfp_ilist = ilist_support(il.first + pfp.shift);
+        uint32_t adjusted = il.first;
+        if (adjusted > 0) { adjusted += pfp.shift; }
+        std::vector<uint_t> pfp_ilist = ilist_support(adjusted);
         std::vector<uint_t> pfp_ilist_adjusted;
-        for (auto e : pfp_ilist) { if (e > 1) { pfp_ilist_adjusted.push_back(e - (pfp.w - 1)); } }
+        for (auto e : pfp_ilist)
+        {
+            if (e > 1) { pfp_ilist_adjusted.push_back(e - (pfp.w - 1)); }
+            else { pfp_ilist_adjusted.push_back(e); }
+        }
 
         if (not pfp_ilist_adjusted.empty()) { all_good = all_good and (pfp_ilist_adjusted == il.second); }
 
