@@ -130,6 +130,19 @@ public:
             std::size_t next_row_pos = (r + 1) * columns;
             return (rank(next_row_pos) - rank(curr_row_pos));
         }
+        
+        // 0 based
+        dict_data_type select_in_row(std::size_t r, dict_data_type i)
+        {
+            if (not built) { build_static_structures(); }
+
+            assert(i < elements_in_row(r));
+            
+            std::size_t curr_row_pos = r * columns;
+            std::size_t prev = rank(curr_row_pos);
+            
+            return select(prev + i + 1) % columns;
+        }
 
         bool non_zero(std::size_t r, dict_data_type c)
         {
