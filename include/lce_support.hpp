@@ -35,7 +35,7 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, class wt_t = pfp_wt_custom>
+template<typename dict_data_type, class wt_t = pfp_wt_sdsl>
 class pfp_lce_support{
 protected:
 public:

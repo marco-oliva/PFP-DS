@@ -38,7 +38,7 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, class wt_t = pfp_wt_custom>
+template<typename dict_data_type, class wt_t = pfp_wt_sdsl>
 class pf_parsing{
 public:
     struct M_entry_t{

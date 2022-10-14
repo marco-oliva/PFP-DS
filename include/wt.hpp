@@ -489,10 +489,15 @@ public:
         return wt_i.range_search_2d(0, i - 1, t, b, false).first;
     }
     
-    size_type range_count_2d (const uint32_t t, const size_type i) const override {
+    size_type range_count_2d(const uint32_t t, const size_type i) const override {
         return wt_i.range_search_2d(0, i - 1, 0, t, false).first;
     }
-    
+
+    std::pair<size_type, std::vector<std::pair<uint32_t, size_type>>>
+    range_search_2d(const uint32_t t, const size_type i) const {
+        return wt_i.range_search_2d(0, i - 1, 0, t, true);
+    }
+
     size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
         size_type written_bytes = 0;
