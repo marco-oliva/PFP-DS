@@ -70,7 +70,9 @@ public:
                 {
                     std::pair<std::size_t, std::size_t> colex_subrange = pfp.Q(r, c);
                     colex_subrange.second = colex_subrange.first + colex_subrange.second - 1;
-                    uint_t num_of_c  = pfp.w_wt.range_count(colex_subrange.first, colex_subrange.second, pfp.w_wt.size());
+                    std::vector<std::pair<std::size_t, std::size_t>> points = pfp.w_wt.range_search_2d(colex_subrange.first, colex_subrange.second, pfp.w_wt.size());
+                    std::sort(points.begin(), points.end());
+                    std::size_t num_of_c = points.size();
                     
                     std::size_t lex_rank = pfp.M[r].l_left;
                     
@@ -80,7 +82,7 @@ public:
                         std::pair<std::size_t, std::size_t> c_sr = pfp.Q(r, c);
                         c_sr.second = c_sr.first + c_sr.second - 1; // Q stores left, length
                         
-                        auto curr = pfp.w_wt.range_select(c_sr.first, c_sr.second, p_it + 1);
+                        auto curr = points[p_it].first;
                         
                         uint_t tot_prev = 0;
                         for (dict_data_type col = 0; col < pfp.Q.elements_in_row(r); col++)
