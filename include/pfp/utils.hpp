@@ -33,7 +33,7 @@
 #include <type_traits>  // enable_if_t and is_fundamental
 
 extern "C" {
-#include<gsacak.h>
+#include <gsacak.h>
 }
 
 namespace pfpds

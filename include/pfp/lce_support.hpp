@@ -25,12 +25,12 @@
 #ifndef _PFP_LCE_SUPPORT_HH
 #define _PFP_LCE_SUPPORT_HH
 
-#include <utils.hpp>
+#include "utils.hpp"
 
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
 
-#include <pfp.hpp>
+#include "pfp.hpp"
 
 namespace pfpds
 {

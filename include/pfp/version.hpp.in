@@ -7,7 +7,7 @@
 #ifndef version_hpp
 #define version_hpp
 
-namespace vcfbwt
+namespace pfpds
 {
 
 struct Version

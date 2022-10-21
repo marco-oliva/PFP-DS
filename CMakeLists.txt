@@ -37,8 +37,8 @@ message(STATUS "Git commit hash: ${GIT_COMMIT_HASH}")
 
 message(STATUS "Generating version.hpp")
 configure_file(
-        ${CMAKE_SOURCE_DIR}/include/version.hpp.in
-        ${CMAKE_BINARY_DIR}/generated/version.hpp)
+        ${CMAKE_SOURCE_DIR}/include/pfp/version.hpp.in
+        ${CMAKE_BINARY_DIR}/generated/pfp/version.hpp)
 
 include_directories(${CMAKE_BINARY_DIR}/generated)
 
