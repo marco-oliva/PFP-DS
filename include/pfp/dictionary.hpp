@@ -62,6 +62,8 @@ public:
     bool lcpD_flag = false;
     bool rmq_lcp_D_flag = false;
     
+    std::size_t w;
+    
     typedef size_t size_type;
     
     // default constructor for load.
@@ -74,7 +76,7 @@ public:
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
                bool rmq_lcp_D_flag_ = true ):
-               d(d_)
+               d(d_), w(w)
     {
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_);
         //assert(d[0] == Dollar);
@@ -86,7 +88,8 @@ public:
                bool isaD_flag_ = true,
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
-               bool rmq_lcp_D_flag_ = true)
+               bool rmq_lcp_D_flag_ = true):
+              w(w)
     {
         // Building dictionary from file
         std::string tmp_filename = filename + std::string(".dict");
