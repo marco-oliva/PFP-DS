@@ -60,7 +60,8 @@ public:
         
         M_table(dictionary<dict_data_type>& dict, std::vector<uint_t>& freq)
         {
-            this->init(dict, freq, false, nullptr, 0);
+            sdsl::bit_vector nb;
+            this->init(dict, freq, false, nb, 0);
         }
         
         M_table(dictionary<dict_data_type>& dict, std::vector<uint_t>& freq, sdsl::bit_vector& b_bwt, std::size_t n)
