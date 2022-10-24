@@ -210,7 +210,7 @@ public:
                 values.push_back(to_insert.second);
             }
 
-            non_zero_positions = sdsl::sd_vector(builder);
+            non_zero_positions = sdsl::sd_vector<>(builder);
             sdsl::util::init_support(rank, &non_zero_positions);
             sdsl::util::init_support(select, &non_zero_positions);
         }
