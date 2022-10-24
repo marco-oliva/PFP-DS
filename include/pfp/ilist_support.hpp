@@ -25,11 +25,10 @@ along with this program.  If not, see http://www.gnu.org/licenses/ .
 #ifndef _PFP_ILIST_SUPPORT_HH
 #define _PFP_ILIST_SUPPORT_HH
 
-#include "utils.hpp"
-
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
 
+#include "utils.hpp"
 #include "pfp.hpp"
 #include "wt.hpp"
 

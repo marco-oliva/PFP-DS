@@ -25,12 +25,11 @@
 #ifndef _PFP_HH
 #define _PFP_HH
 
-#include "utils.hpp"
-
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
 #include <sdsl/wavelet_trees.hpp>
 
+#include "utils.hpp"
 #include "dictionary.hpp"
 #include "parse.hpp"
 #include "wt.hpp"
