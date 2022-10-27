@@ -299,7 +299,7 @@ public:
     // Default constructor for load
     pf_parsing() {}
     
-    pf_parsing(std::vector<uint8_t> &d_,
+    pf_parsing(std::vector<dict_data_type> &d_,
     std::vector<uint32_t> &p_,
     std::vector<uint_t> &freq_,
     size_t w_, std::size_t shift = 0) :
