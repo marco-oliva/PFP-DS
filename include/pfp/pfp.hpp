@@ -48,230 +48,14 @@ public:
         uint_t l_right;
     };
     
-    class M_table
+    class V_table
     {
-    private:
-        std::vector<M_entry_t> table;
-        
-    public:
-        
-        M_table() = default;
-        
-        M_table(dictionary<dict_data_type>& dict, std::vector<uint_t>& freq)
-        {
-            sdsl::bit_vector nb;
-            this->init(dict, freq, false, nb, 0);
-        }
-        
-        M_table(dictionary<dict_data_type>& dict, std::vector<uint_t>& freq, sdsl::bit_vector& b_bwt, std::size_t n)
-        {
-            this->init(dict, freq, true, b_bwt, n);
-        }
-        
-        // optionally edits b_bwt too
-        void init(dictionary<dict_data_type>& dict, std::vector<uint_t>& freq, bool edit_b_bwt, sdsl::bit_vector& b_bwt, std::size_t n)
-        {
-            if (edit_b_bwt)
-            {
-                b_bwt.resize(n);
-                for (size_t i = 0; i < b_bwt.size(); ++i)
-                    b_bwt[i] = false; // bug in resize
-            }
-            
-            assert(dict.d[dict.saD[0]] == EndOfDict);
-            size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
-            size_t j = 0;
-        
-            size_t l_left  = 0;
-            size_t l_right = 0;
-            while (i < dict.saD.size())
-            {
-                size_t left = i;
-            
-                auto sn = dict.saD[i];
-                // Check if the suffix has length at least w and is not the complete phrase.
-                auto phrase = dict.daD[i] + 1;
-                assert(phrase > 0 && phrase < freq.size()); // + 1 because daD is 0-based
-                size_t suffix_length = dict.select_b_d(dict.rank_b_d(sn + 1) + 1) - sn - 1;
-                if (dict.b_d[sn] || suffix_length < dict.w)
-                {
-                    ++i; // Skip
-                }
-                else
-                {
-                    // use the RMQ data structure to find how many of the following suffixes are the same except for the terminator (so they're the same suffix but in different phrases)
-                    // use the document array and the table of phrase frequencies to find the phrases frequencies and sum them up
-                    if (edit_b_bwt) { b_bwt[j++] = true; }
-                    j += freq[phrase] - 1; // the next bits are 0s
-                    i++;
-                
-                    l_right += freq[phrase] - 1;
-                
-                    if (i < dict.saD.size())
-                    {
-                        auto new_sn = dict.saD[i];
-                        auto new_phrase = dict.daD[i] + 1;
-                        assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
-                        size_t new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
-                    
-                        while (i < dict.saD.size() && (dict.lcpD[i] >= suffix_length) && (suffix_length == new_suffix_length))
-                        {
-                            j += freq[new_phrase];
-                            ++i;
-                        
-                            l_right += freq[new_phrase];
-                        
-                            if (i < dict.saD.size())
-                            {
-                                new_sn = dict.saD[i];
-                                new_phrase = dict.daD[i] + 1;
-                                assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
-                                new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
-                            }
-                        }
-                    }
-                
-                    // Computing M
-                    size_t right = i - 1;
-                    M_entry_t m;
-                    m.len = suffix_length;
-                    m.left = dict.colex_daD[dict.rmq_colex_daD(left, right)];
-                    m.right = dict.colex_daD[dict.rMq_colex_daD(left, right)];
-                    m.l_left = l_left;
-                    m.l_right = l_right;
-                
-                    table.push_back(m);
-                
-                    l_left = l_right + 1;
-                    l_right = l_left;
-                }
-            }
-        }
-        
-        const M_entry_t& operator[](std::size_t i) { return table[i]; }
-        std::size_t size() { return table.size(); }
-    };
     
-    
-    class Q_table
-    {
-    private:
-        std::vector<std::pair<std::size_t, std::size_t>> values;
-        std::vector<std::pair<std::size_t, std::pair<std::size_t, std::size_t>>> non_zero_tmp_queue;
-        sdsl::sd_vector<> non_zero_positions;
-        sdsl::rank_support_sd<> rank;
-        sdsl::select_support_sd<> select;
-        std::size_t rows;
-        dict_data_type columns;
-        
-        sdsl::sd_vector_builder builder;
-        bool built = false;
-
-        std::size_t last_pos_set = 0;
-
     public:
+        std::vector<std::vector<std::size_t>> table; // stored in column major
         
-        Q_table() {}
+        V_table(dict_data_type columns): table(columns) {}
         
-        Q_table(std::size_t rows, dict_data_type columns)
-            : rows(rows), columns(columns)
-        {}
-
-        void init(std::size_t rows_, dict_data_type columns_)
-        {
-            this->rows = rows_;
-            this->columns = columns_;
-        }
-
-        void append(std::size_t r, dict_data_type c, std::pair<std::size_t, std::size_t> v)
-        {
-            assert(not built);
-            assert(not (v.first == 0 and v.second == 0));
-            assert(r < rows and c < columns);
-
-            std::size_t pos = (r * columns) + c;
-            assert(last_pos_set == 0 or pos > last_pos_set);
-
-            last_pos_set = pos;
-
-            non_zero_tmp_queue.emplace_back(pos, v);
-        }
-
-        void build_static_structures()
-        {
-            if (built) { return; } built = true;
-
-            this->builder = sdsl::sd_vector_builder(rows * columns, non_zero_tmp_queue.size());
-
-            values.clear();
-            for (auto& to_insert : non_zero_tmp_queue)
-            {
-                builder.set(to_insert.first);
-                values.push_back(to_insert.second);
-            }
-
-            non_zero_positions = sdsl::sd_vector<>(builder);
-            sdsl::util::init_support(rank, &non_zero_positions);
-            sdsl::util::init_support(select, &non_zero_positions);
-        }
-
-        std::pair<std::size_t, std::size_t> operator()(std::size_t r, dict_data_type c)
-        {
-            if (not built) { build_static_structures(); }
-
-            std::size_t pos = (r * columns) + c;
-            assert(r < rows and c < columns);
-
-            if (non_zero_positions[pos]) { return values[rank(pos)]; }
-            else { return std::make_pair(0,0); }
-        }
-        
-        dict_data_type elements_in_row(std::size_t r)
-        {
-            if (not built) { build_static_structures(); }
-            
-            std::size_t curr_row_pos = r * columns;
-            std::size_t next_row_pos = (r + 1) * columns;
-            return (rank(next_row_pos) - rank(curr_row_pos));
-        }
-        
-        // 0 based
-        dict_data_type select_in_row(std::size_t r, dict_data_type i)
-        {
-            if (not built) { build_static_structures(); }
-
-            assert(i < elements_in_row(r));
-            
-            std::size_t curr_row_pos = r * columns;
-            std::size_t prev = rank(curr_row_pos);
-            
-            return select(prev + i + 1) % columns;
-        }
-
-        bool non_zero(std::size_t r, dict_data_type c)
-        {
-            if (not built) { build_static_structures(); }
-
-            std::size_t pos = (r * columns) + c;
-            assert(r < rows and c < columns);
-            return non_zero_positions[pos];
-        }
-        
-        void print()
-        {
-            for (std::size_t i = 0; i < rows; i++)
-            {
-                std::size_t plotted = 0;
-                for (std::size_t j = 0; j < columns; j++)
-                {
-                    
-                    auto v = this->operator()(i,j);
-                    if (v != std::make_pair(0UL,0UL)) { std::cout << char(j) << ": (" << v.first << "," << v.second << ")\t"; plotted += 1; }
-                }
-                if (plotted == 0) { std::cout << "empty line -----"; }
-                std::cout << std::endl;
-            }
-        }
     };
     
     dictionary<dict_data_type> dict;
@@ -284,9 +68,7 @@ public:
     sdsl::bit_vector b_bwt;
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
     sdsl::bit_vector::select_1_type b_bwt_select_1;
-    M_table M;
-    
-    Q_table Q;
+    std::vector<M_entry_t> M;
     
     wt_t w_wt;
     
@@ -319,7 +101,7 @@ public:
         _elapsed_time(compute_b_p());
         
         spdlog::info("Computing b_bwt and M of the parsing");
-        _elapsed_time(build_b_bwt_and_M_and_Q());
+        _elapsed_time(build_b_bwt_and_M());
 
         spdlog::info("Computing W of BWT(P)");
         _elapsed_time(build_W());
@@ -346,7 +128,7 @@ public:
         _elapsed_time(compute_b_p());
         
         spdlog::info("Computing b_bwt and M of the parsing");
-        _elapsed_time(build_b_bwt_and_M_and_Q());
+        _elapsed_time(build_b_bwt_and_M());
 
         spdlog::info("Computing W of BWT(P)");
         _elapsed_time(build_W());
@@ -390,46 +172,84 @@ public:
         //n += w - 1; // Changed after changind b_d in dict // -1 is for the first dollar + w because n is the length including the last w markers
     }
 
-    void build_b_bwt_and_M_and_Q()
+    void build_b_bwt_and_M()
     {
-        // Init M and b_bwt
-        M.init(dict, freq, true, b_bwt, n);
+        b_bwt.resize(n);
+        for (size_t i = 0; i < b_bwt.size(); ++i)
+            b_bwt[i] = false; // bug in resize
+        
+        assert(dict.d[dict.saD[0]] == EndOfDict);
+        size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
+        size_t j = 0;
+        
+        size_t l_left  = 0;
+        size_t l_right = 0;
+        while (i < dict.saD.size())
+        {
+            size_t left = i;
+            
+            auto sn = dict.saD[i];
+            // Check if the suffix has length at least w and is not the complete phrase.
+            auto phrase = dict.daD[i] + 1;
+            assert(phrase > 0 && phrase < freq.size()); // + 1 because daD is 0-based
+            size_t suffix_length = dict.select_b_d(dict.rank_b_d(sn + 1) + 1) - sn - 1;
+            if (dict.b_d[sn] || suffix_length < dict.w)
+            {
+                ++i; // Skip
+            }
+            else
+            {
+                // use the RMQ data structure to find how many of the following suffixes are the same except for the terminator (so they're the same suffix but in different phrases)
+                // use the document array and the table of phrase frequencies to find the phrases frequencies and sum them up
+                b_bwt[j++] = true;
+                j += freq[phrase] - 1; // the next bits are 0s
+                i++;
+                
+                l_right += freq[phrase] - 1;
+                
+                if (i < dict.saD.size())
+                {
+                    auto new_sn = dict.saD[i];
+                    auto new_phrase = dict.daD[i] + 1;
+                    assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
+                    size_t new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
+                    
+                    while (i < dict.saD.size() && (dict.lcpD[i] >= suffix_length) && (suffix_length == new_suffix_length))
+                    {
+                        j += freq[new_phrase];
+                        ++i;
+                        
+                        l_right += freq[new_phrase];
+                        
+                        if (i < dict.saD.size())
+                        {
+                            new_sn = dict.saD[i];
+                            new_phrase = dict.daD[i] + 1;
+                            assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
+                            new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
+                        }
+                    }
+                }
+                
+                // Computing M
+                size_t right = i - 1;
+                M_entry_t m;
+                m.len = suffix_length;
+                m.left = dict.colex_daD[dict.rmq_colex_daD(left, right)];
+                m.right = dict.colex_daD[dict.rMq_colex_daD(left, right)];
+                m.l_left = l_left;
+                m.l_right = l_right;
+                
+                M.push_back(m);
+                
+                l_left = l_right + 1;
+                l_right = l_left;
+            }
+        }
         
         // rank & select support for b_bwt
         b_bwt_rank_1 = sdsl::bit_vector::rank_1_type(&b_bwt);
         b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
-
-        // now build Q
-        Q.init(M.size(), dict.alphabet_size);
-
-        for (std::size_t row = 0; row < M.size(); row++)
-        {
-            const M_entry_t& m = M[row];
-
-            std::vector<std::pair<dict_data_type, std::size_t>> phrase_counts;
-            for (std::size_t r = m.left; r <= m.right; r++)
-            {
-                auto phrase = dict.colex_id[r];
-                std::size_t phrase_start = dict.select_b_d(phrase + 1);
-                std::size_t phrase_length = dict.length_of_phrase(phrase + 1);
-                dict_data_type c = dict.d[phrase_start + (phrase_length - m.len - 1)];
-
-                if (phrase_counts.empty() or phrase_counts.back().first != c)
-                {
-                    phrase_counts.push_back(std::make_pair(c, 1));
-                }
-                else { phrase_counts.back().second += 1; }
-            }
-            
-            // update matrix row
-            std::size_t range_start = m.left;
-            for (auto const& c_count : phrase_counts)
-            {
-                std::pair<std::size_t, std::size_t> q_element = std::make_pair(range_start, c_count.second);
-                Q.append(row, c_count.first, q_element);
-                range_start += c_count.second;
-            }
-        }
     }
     
     void build_W() {

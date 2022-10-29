@@ -63,108 +63,6 @@ void read_fasta_file(const char *filename, std::vector<char_type>& v){
 #include <pfp/ilist_support.hpp>
 #include <sdsl/suffix_arrays.hpp>
 
-TEST_CASE( "Q matix 1", "Sparse Matrix" )
-{
-    std::vector<std::pair<std::size_t, std::size_t>> table_test =
-    {
-        {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
-        {4,0},{0,0},{1,0},{1,0},{3,0},{0,0},{0,0},
-        {0,0},{0,0},{0,0},{0,0},{3,0},{5,0},{0,0},
-        {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
-        {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{1,0},
-    };
-    std::size_t rows = 5;
-    uint8_t columns = 7;
-
-
-    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns);
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            if (table_test[pos] != std::make_pair(0UL,0UL))
-            {
-                table.append(i, j, table_test[pos]);
-            }
-        }
-    }
-
-    bool all_good = true;
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            all_good = all_good and (table_test[pos] == table(i, j));
-        }
-    }
-    REQUIRE(all_good);
-
-    REQUIRE(table.elements_in_row(0) == 3);
-    REQUIRE(table.elements_in_row(1) == 4);
-    REQUIRE(table.elements_in_row(2) == 2);
-    REQUIRE(table.elements_in_row(3) == 0);
-    REQUIRE(table.elements_in_row(4) == 4);
-
-    REQUIRE(table.select_in_row(0, 0) == 2);
-    REQUIRE(table.select_in_row(0, 1) == 3);
-    REQUIRE(table.select_in_row(0, 2) == 4);
-
-    REQUIRE(table.select_in_row(1, 0) == 0);
-    REQUIRE(table.select_in_row(1, 1) == 2);
-    REQUIRE(table.select_in_row(1, 2) == 3);
-    REQUIRE(table.select_in_row(1, 3) == 4);
-}
-
-TEST_CASE( "Q matix 2", "Sparse Matrix" )
-{
-    std::vector<std::pair<std::size_t, std::size_t>> table_test =
-    {
-            {1,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
-            {4,0},{1,0},{1,0},{1,0},{3,0},{1,0},{1,0},
-            {0,0},{0,0},{0,0},{0,0},{3,0},{0,0},{0,0},
-            {0,0},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
-            {0,0},{0,0},{1,0},{2,0},{3,0},{0,0},{0,0},
-    };
-
-    std::size_t rows = 5;
-    uint8_t columns = 7;
-
-
-    pfpds::pf_parsing<uint8_t>::Q_table table(rows, columns);
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            if (table_test[pos] != std::make_pair(0UL,0UL))
-            {
-                table.append(i, j, table_test[pos]);
-            }
-        }
-    }
-
-    bool all_good = true;
-    for (std::size_t i = 0; i < rows; i++)
-    {
-        for (uint8_t j = 0; j < columns; j++)
-        {
-            std::size_t pos = (i * columns) + j;
-            all_good = all_good and (table_test[pos] == table(i, j));
-        }
-    }
-    REQUIRE(all_good);
-
-    REQUIRE(table.elements_in_row(0) == 4);
-    REQUIRE(table.elements_in_row(1) == 7);
-    REQUIRE(table.elements_in_row(2) == 1);
-    REQUIRE(table.elements_in_row(3) == 0);
-    REQUIRE(table.elements_in_row(4) == 3);
-
-    REQUIRE(table.select_in_row(2, 0) == 4);
-}
-
 TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
     std::vector<uint8_t> yeast;
@@ -228,7 +126,7 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     REQUIRE(all_good);
 }
 
-TEST_CASE( "pfp<uint32_t> ilist for yeast's parse", "PFP on yeast.fasta.parse" )
+TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 {
     std::size_t w = 5;
 
@@ -328,81 +226,6 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     pfpds::pfp_ilist_support<uint8_t> ilist(pfp);
 
     REQUIRE(pfp.dict.colex_id == colex_id);
-
-    std::string bwt = "CCCCC#CCCTTTTC###GGTATAATTACCC#####GGGAGCAAAGGTTTTTGGGTTTAAAAAAAAAAGGTGTTTTTTTTTAAA"
-                      "ATTTTTCCCCCCCCTTTAAAAAAACCCAAAACAAGGGGGTGGGGGCCCCCGGGGGGGGCCCCCCCCAAGCCAAAAACGAAAAA"
-                      "ACCCCCGTCCTTTTCACCCCACGGGTGGTGTGTTTTTTTTGGGGGTGGGGCCCGCGGG";
-
-    std::vector<uint_t> ilist_dollar;
-    for (std::size_t i = 0; i < bwt.size(); i++) { if (bwt[i] == '#') { ilist_dollar.push_back(i); } }
-    REQUIRE(ilist_dollar == ilist('#'));
-
-    std::vector<uint_t> ilist_A;
-    for (std::size_t i = 0; i < bwt.size(); i++) { if (bwt[i] == 'A') { ilist_A.push_back(i); } }
-    REQUIRE(ilist_A == ilist('A'));
-
-    std::vector<uint_t> ilist_C;
-    for (std::size_t i = 0; i < bwt.size(); i++) { if (bwt[i] == 'C') { ilist_C.push_back(i); } }
-    REQUIRE(ilist_C == ilist('C'));
-
-    std::vector<uint_t> ilist_G;
-    for (std::size_t i = 0; i < bwt.size(); i++) { if (bwt[i] == 'G') { ilist_G.push_back(i); } }
-    REQUIRE(ilist_G == ilist('G'));
-
-    std::vector<uint_t> ilist_T;
-    for (std::size_t i = 0; i < bwt.size(); i++) { if (bwt[i] == 'T') { ilist_T.push_back(i); } }
-    REQUIRE(ilist_T == ilist('T'));
-}
-
-TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
-{
-    std::size_t w = 5;
-
-    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w, 10);
-    pfpds::pfp_ilist_support<uint32_t> ilist_support(pfp);
-
-    // TEST sa_ds
-    std::vector<uint32_t> yeast_parse;
-    pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
-    yeast_parse.push_back(0);
-
-    std::vector<uint_t> yeast_parse_SA;
-    yeast_parse_SA.resize(yeast_parse.size());
-    std::size_t alphabet_size = (*std::max_element(yeast_parse.begin(), yeast_parse.end())) + 1;
-    sacak_int(&yeast_parse[0],&yeast_parse_SA[0],yeast_parse.size(), alphabet_size);
-
-    std::vector<uint32_t> yeast_parse_bwt(yeast_parse.size());
-    for (std::size_t i = 0; i < yeast_parse.size(); i++)
-    {
-        if (yeast_parse_SA[i] == 0) { yeast_parse_bwt[i] = yeast_parse.back(); }
-        else { yeast_parse_bwt[i] = yeast_parse[yeast_parse_SA[i] - 1]; }
-    }
-
-    std::map<uint32_t, std::vector<uint_t>> ilists;
-    for(size_t i = 0; i < yeast_parse_bwt.size(); ++i)
-    {
-        ilists[yeast_parse_bwt[i]].push_back(i);
-    }
-
-    bool all_good = true;
-    for (auto const& il : ilists)
-    {
-        uint32_t adjusted = il.first;
-        if (adjusted > 0) { adjusted += pfp.shift; }
-        std::vector<uint_t> pfp_ilist = ilist_support(adjusted);
-        std::vector<uint_t> pfp_ilist_adjusted;
-        for (auto e : pfp_ilist)
-        {
-            if (e > 1) { pfp_ilist_adjusted.push_back(e - (pfp.w - 1)); }
-            else { pfp_ilist_adjusted.push_back(e); }
-        }
-
-        if (not pfp_ilist_adjusted.empty()) { all_good = all_good and (pfp_ilist_adjusted == il.second); }
-
-        if (not all_good) { break; }
-    }
-
-    REQUIRE(all_good);
 }
 
 //------------------------------------------------------------------------------
