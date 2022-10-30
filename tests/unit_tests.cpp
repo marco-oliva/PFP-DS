@@ -222,9 +222,7 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     // build pfp
     parse.push_back(0);
     pfpds::pf_parsing<uint8_t> pfp(dict2, parse, frequencies, w);
-
-    pfpds::pfp_ilist_support<uint8_t> ilist(pfp);
-
+    
     REQUIRE(pfp.dict.colex_id == colex_id);
 }
 

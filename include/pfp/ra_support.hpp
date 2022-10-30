@@ -19,7 +19,7 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, class wt_t = pfp_wt_sdsl>
+template<typename dict_data_type, class wt_t = pfp_wt_custom>
 class pfp_ra_support {
 public:
     const pf_parsing<dict_data_type, wt_t>& pfp;

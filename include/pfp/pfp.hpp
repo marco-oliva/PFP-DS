@@ -37,25 +37,13 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, class wt_t = pfp_wt_sdsl>
+template<typename dict_data_type, class wt_t = pfp_wt_custom>
 class pf_parsing{
 public:
     struct M_entry_t{
         uint_t len;
         uint_t left; // left and right are the extremes of the range
         uint_t right;
-        uint_t l_left;
-        uint_t l_right;
-    };
-    
-    class V_table
-    {
-    
-    public:
-        std::vector<std::vector<std::size_t>> table; // stored in column major
-        
-        V_table(dict_data_type columns): table(columns) {}
-        
     };
     
     dictionary<dict_data_type> dict;
@@ -69,6 +57,8 @@ public:
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
     sdsl::bit_vector::select_1_type b_bwt_select_1;
     std::vector<M_entry_t> M;
+    
+    std::vector<std::vector<std::size_t>> Q;
     
     wt_t w_wt;
     
@@ -88,6 +78,7 @@ public:
     dict(d_, w_),
     pars(p_, dict.n_phrases() + 1),
     freq(freq_),
+    Q(dict.alphabet_size),
     w(w_),
     shift(shift)
     {
@@ -114,6 +105,7 @@ public:
     dict(filename, w_),
     pars(filename,dict.n_phrases()+1),
     freq(dict.n_phrases() + 1,0),
+    Q(dict.alphabet_size),
     w(w_),
     shift(shift)
     {
@@ -181,9 +173,7 @@ public:
         assert(dict.d[dict.saD[0]] == EndOfDict);
         size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
         size_t j = 0;
-        
-        size_t l_left  = 0;
-        size_t l_right = 0;
+
         while (i < dict.saD.size())
         {
             size_t left = i;
@@ -205,8 +195,6 @@ public:
                 j += freq[phrase] - 1; // the next bits are 0s
                 i++;
                 
-                l_right += freq[phrase] - 1;
-                
                 if (i < dict.saD.size())
                 {
                     auto new_sn = dict.saD[i];
@@ -218,8 +206,6 @@ public:
                     {
                         j += freq[new_phrase];
                         ++i;
-                        
-                        l_right += freq[new_phrase];
                         
                         if (i < dict.saD.size())
                         {
@@ -237,13 +223,8 @@ public:
                 m.len = suffix_length;
                 m.left = dict.colex_daD[dict.rmq_colex_daD(left, right)];
                 m.right = dict.colex_daD[dict.rMq_colex_daD(left, right)];
-                m.l_left = l_left;
-                m.l_right = l_right;
                 
                 M.push_back(m);
-                
-                l_left = l_right + 1;
-                l_right = l_left;
             }
         }
         
