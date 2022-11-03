@@ -61,6 +61,7 @@ public:
     bool daD_flag = false;
     bool lcpD_flag = false;
     bool rmq_lcp_D_flag = false;
+    bool colex_daD_flag = false;
     
     std::size_t w;
     
@@ -75,10 +76,11 @@ public:
                bool isaD_flag_ = true,
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
-               bool rmq_lcp_D_flag_ = true ):
+               bool rmq_lcp_D_flag_ = true,
+               bool colex_daD_flag = true):
                d(d_), w(w)
     {
-        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_);
+        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_daD_flag);
         //assert(d[0] == Dollar);
     }
     
@@ -88,7 +90,8 @@ public:
                bool isaD_flag_ = true,
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
-               bool rmq_lcp_D_flag_ = true):
+               bool rmq_lcp_D_flag_ = true,
+               bool colex_daD_flag = true):
               w(w)
     {
         // Building dictionary from file
@@ -104,7 +107,7 @@ public:
         std::vector<data_type> dollars(w-n_dollars,Dollar);
         d.insert(d.begin(), dollars.begin(),dollars.end());
         
-        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_);
+        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_daD_flag);
     }
     
     inline size_t length_of_phrase(size_t id) {
@@ -116,7 +119,7 @@ public:
         return rank_b_d(d.size()-1);
     }
     
-    void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_){
+    void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_, bool colex_daD_flag_){
         // Get alphabet size
         alphabet_size = (*std::max_element(d.begin(), d.end())) + 1;
         
@@ -193,8 +196,9 @@ public:
             );
         }
         
-   
-        // if(colex_daD_flag_){
+        
+        if(colex_daD_flag_)
+        {
         // co-lex document array of the dictionary.
         spdlog::info("Computing co-lex DA of dictionary");
         _elapsed_time(
@@ -220,14 +224,11 @@ public:
         //     colex_daD[i]  = inv_colex_id[daD[i]];
         //   }
         // }
-        {
             compute_colex_da();
             rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
             rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
-        }
         );
-        
-        // }
+        }
     }
     
     void compute_colex_da()
