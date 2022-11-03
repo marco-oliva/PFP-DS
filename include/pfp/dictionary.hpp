@@ -195,8 +195,8 @@ public:
             rmq_lcp_D = sdsl::rmq_succinct_sct<>(&lcpD)
             );
         }
-        
-        
+
+        assert(daD_flag_);
         if(colex_daD_flag_)
         {
         // co-lex document array of the dictionary.
