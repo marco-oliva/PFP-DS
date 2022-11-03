@@ -196,7 +196,7 @@ public:
             );
         }
 
-        assert(daD_flag_);
+        assert(!colex_daD_flag_ || daD_flag_);
         if(colex_daD_flag_)
         {
         // co-lex document array of the dictionary.
