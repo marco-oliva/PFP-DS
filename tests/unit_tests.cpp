@@ -60,15 +60,15 @@ void read_fasta_file(const char *filename, std::vector<char_type>& v){
 #include <pfp/pfp.hpp>
 #include <pfp/ra_support.hpp>
 #include <pfp/sa_support.hpp>
-#include <pfp/ilist_support.hpp>
 #include <sdsl/suffix_arrays.hpp>
 
 TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
     std::vector<uint8_t> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
-
-    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10);
+    
+    std::less<uint8_t> lex_comp;
+    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10, lex_comp);
     pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
 
     bool all_good = true;
@@ -85,7 +85,8 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
     std::vector<uint32_t> yeast_parse;
     pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
 
-    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", 5);
+    std::less<uint32_t> int_comp;
+    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", 5, int_comp);
     pfpds::pfp_ra_support<uint32_t> ra_support(pfp);
 
     bool all_good = true;
@@ -100,8 +101,9 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 {
     std::size_t w = 10;
-
-    pfpds::pf_parsing<char> pfp(testfiles_dir + "/yeast.fasta", w);
+    
+    std::less<char> char_comp;
+    pfpds::pf_parsing<char> pfp(testfiles_dir + "/yeast.fasta", w, char_comp);
     pfpds::pfp_sa_support<char> sa_support(pfp);
 
     // TEST sa_ds
@@ -129,8 +131,9 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 {
     std::size_t w = 5;
-
-    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w);
+    
+    std::less<uint32_t> int_comp;
+    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
     pfpds::pfp_sa_support<uint32_t> sa_support(pfp);
 
     // TEST sa_ds
@@ -221,8 +224,9 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
 
     // build pfp
     parse.push_back(0);
-    pfpds::pf_parsing<uint8_t> pfp(dict2, parse, frequencies, w);
-    
+    std::less<uint8_t> lex_comp;
+    pfpds::pf_parsing<uint8_t> pfp(dict2, lex_comp, parse, frequencies, w);
+
     REQUIRE(pfp.dict.colex_id == colex_id);
 }
 

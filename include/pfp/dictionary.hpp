@@ -35,7 +35,7 @@
 namespace pfpds
 {
 
-template <typename data_type>
+template <typename data_type, class colex_comparator_type = std::less<data_type>>
 class dictionary
 {
 
@@ -67,18 +67,21 @@ public:
     
     typedef size_t size_type;
     
+    colex_comparator_type& colex_comparator;
+    
     // default constructor for load.
     dictionary() {}
     
     dictionary( std::vector<data_type>& d_,
                size_t w,
+               colex_comparator_type& colex_comparator,
                bool saD_flag_ = true,
                bool isaD_flag_ = true,
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
                bool rmq_lcp_D_flag_ = true,
                bool colex_daD_flag = true):
-               d(d_), w(w)
+               d(d_), w(w), colex_comparator(colex_comparator)
     {
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_daD_flag);
         //assert(d[0] == Dollar);
@@ -86,13 +89,14 @@ public:
     
     dictionary(std::string filename,
                size_t w,
+               colex_comparator_type& colex_comparator,
                bool saD_flag_ = true,
                bool isaD_flag_ = true,
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
                bool rmq_lcp_D_flag_ = true,
                bool colex_daD_flag = true):
-              w(w)
+              w(w), colex_comparator(colex_comparator)
     {
         // Building dictionary from file
         std::string tmp_filename = filename + std::string(".dict");
@@ -322,7 +326,32 @@ public:
             rev_dict[rank].second = rank;
             rank++;
         }
-        std::sort(rev_dict.begin(),rev_dict.end());
+        
+        std::vector<std::pair<std::vector<data_type>,uint32_t>> rev_dict_2(rev_dict);
+        
+        std::sort(rev_dict.begin(),rev_dict.end(),
+                  [this] (std::pair<std::vector<data_type>,uint32_t>& l, std::pair<std::vector<data_type>,uint32_t>& r)
+                  {
+                      std::pair<typename std::vector<data_type>::iterator, typename std::vector<data_type>::iterator> mismatch;
+                      if (l.first.size() < r.first.size())
+                      {
+                          mismatch = std::mismatch(l.first.begin(), l.first.end(), r.first.begin());
+                          if (mismatch.first == l.first.end())
+                          {
+                              return true;
+                          }
+                          return this->colex_comparator(*(mismatch.first), *(mismatch.second));
+                      }
+                      else
+                      {
+                          mismatch = std::mismatch(r.first.begin(), r.first.end(), l.first.begin());
+                          if (mismatch.first == r.first.end())
+                          {
+                              return false;
+                          }
+                          return this->colex_comparator(*(mismatch.second), *(mismatch.first));
+                      }
+                  } );
         
         for (i = 0; i < colex_id.size(); i++) { colex_id[i] = rev_dict[i].second; }
         for (i = 0; i < colex_id.size(); i++) { inv_colex_id[colex_id[i]] = i; }

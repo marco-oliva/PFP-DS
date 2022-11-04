@@ -37,7 +37,7 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, class wt_t = pfp_wt_custom>
+template<typename dict_data_type, typename colex_comparator_type = std::less<dict_data_type>, class wt_t = pfp_wt_custom>
 class pf_parsing{
 public:
     struct M_entry_t{
@@ -46,7 +46,7 @@ public:
         uint_t right;
     };
     
-    dictionary<dict_data_type> dict;
+    dictionary<dict_data_type, colex_comparator_type> dict;
     parse pars;
     std::vector<uint_t> freq;
     size_t n; // Size of the text
@@ -72,10 +72,11 @@ public:
     pf_parsing() {}
     
     pf_parsing(std::vector<dict_data_type> &d_,
+    colex_comparator_type& colex_comparator,
     std::vector<uint32_t> &p_,
     std::vector<uint_t> &freq_,
     size_t w_, std::size_t shift = 0) :
-    dict(d_, w_),
+    dict(d_, w_, colex_comparator),
     pars(p_, dict.n_phrases() + 1),
     freq(freq_),
     Q(dict.alphabet_size),
@@ -101,8 +102,8 @@ public:
         // clear_unnecessary_elements();
     }
     
-    pf_parsing( std::string filename, size_t w_, std::size_t shift = 0):
-    dict(filename, w_),
+    pf_parsing( std::string filename, size_t w_, colex_comparator_type& colex_comparator, std::size_t shift = 0):
+    dict(filename, w_, colex_comparator),
     pars(filename,dict.n_phrases()+1),
     freq(dict.n_phrases() + 1,0),
     Q(dict.alphabet_size),
@@ -340,29 +341,29 @@ public:
 };
 
 
-// Specialization for pfp_wt_custom
-template <>
-std::string pf_parsing<pfp_wt_custom>::filesuffix() const
-{
-    return ".pf.ds";
-}
-
-// Specialization for pfp_wt_sdsl
-template <>
-std::string pf_parsing<pfp_wt_sdsl>::filesuffix() const
-{
-    return ".pf.wt_sdsl.ds";
-}
-
-// Specialization for pfp_wt_sdsl_2
-template <>
-std::string pf_parsing<pfp_wt_sdsl_2>::filesuffix() const
-{
-    return ".pf.wt_sdsl_2.ds";
-}
-
-using pf_parsing_custom = pf_parsing<pfp_wt_custom>;
-using pf_parsing_sdsl = pf_parsing<pfp_wt_sdsl>;
+//// Specialization for pfp_wt_custom
+//template <>
+//std::string pf_parsing<pfp_wt_custom>::filesuffix() const
+//{
+//    return ".pf.ds";
+//}
+//
+//// Specialization for pfp_wt_sdsl
+//template <>
+//std::string pf_parsing<pfp_wt_sdsl>::filesuffix() const
+//{
+//    return ".pf.wt_sdsl.ds";
+//}
+//
+//// Specialization for pfp_wt_sdsl_2
+//template <>
+//std::string pf_parsing<pfp_wt_sdsl_2>::filesuffix() const
+//{
+//    return ".pf.wt_sdsl_2.ds";
+//}
+//
+//using pf_parsing_custom = pf_parsing<pfp_wt_custom>;
+//using pf_parsing_sdsl = pf_parsing<pfp_wt_sdsl>;
 
 }
 

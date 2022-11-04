@@ -34,11 +34,11 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, class wt_t = pfp_wt_custom>
+template<typename dict_data_type, typename colex_comparator_type = std::less<dict_data_type>, class wt_t = pfp_wt_custom>
 class pfp_lce_support{
 protected:
 public:
-    pf_parsing<dict_data_type, wt_t>& pfp;
+    pf_parsing<dict_data_type, colex_comparator_type, wt_t>& pfp;
     
     // This has to be changed using pfp_dictionary and pfp_parse
     pfp_lce_support(pf_parsing<dict_data_type, wt_t>& pfp_):
