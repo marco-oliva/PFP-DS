@@ -99,7 +99,7 @@ public:
         _elapsed_time(build_W());
 
         // Clear unnecessary elements
-        // clear_unnecessary_elements();
+        clear_unnecessary_elements();
     }
     
     pf_parsing( std::string filename, size_t w_, colex_comparator_type& colex_comparator, std::size_t shift = 0):
@@ -256,9 +256,9 @@ public:
     
     void clear_unnecessary_elements(){
         dict.daD.clear();
-        dict.colex_daD.clear();
-        dict.colex_id.clear();
-        dict.inv_colex_id.clear();
+        // dict.colex_daD.clear();
+        // dict.colex_id.clear();
+        // dict.inv_colex_id.clear();
         // pars.saP.clear(); // It is needed in sa_support
         //    dict.rmq_colex_daD.clear();
         //    dict.rMq_colex_daD.clear();
