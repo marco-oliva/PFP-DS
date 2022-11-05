@@ -124,6 +124,18 @@ public:
     }
     
     void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_, bool colex_daD_flag_){
+        
+        if ((d.size() > (0x7FFFFFFF - 2)) and (sizeof(uint_t) == 4))
+        {
+            spdlog::error("Parse exceeds size allowed for 32 bits. Please use 64 bits executable.");
+            std::exit(1);
+        }
+        else
+        {
+            if (sizeof(uint_t) == 4) { spdlog::info("Using 32 bits uint_t"); }
+            else { spdlog::info("Using 64 bits uint_t"); }
+        }
+        
         // Get alphabet size
         alphabet_size = (*std::max_element(d.begin(), d.end())) + 1;
         
