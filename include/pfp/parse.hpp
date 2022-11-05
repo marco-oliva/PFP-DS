@@ -70,6 +70,18 @@ public:
     
     void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_){
         
+        if ((p.size() > (std::numeric_limits<uint_t>::max() - 2)) and (sizeof(uint_t) == 4))
+        {
+            spdlog::error("Parse exceeds size allowed for 32 bits. Please use 64 bits executable.");
+            std::exit(1);
+        }
+        else
+        {
+            if (sizeof(uint_t) == 4) { spdlog::info("Using 32 bits uint_t"); }
+            else { spdlog::info("Using 64 bits uint_t"); }
+        }
+        
+        
         // TODO: check if it has been already computed
         if(saP_flag_){
             saP.resize(p.size());
