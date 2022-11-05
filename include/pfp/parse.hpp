@@ -70,7 +70,7 @@ public:
     
     void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_){
         
-        if ((p.size() > (std::numeric_limits<uint_t>::max() - 2)) and (sizeof(uint_t) == 4))
+        if ((p.size() > (0x7FFFFFFF - 2)) and (sizeof(uint_t) == 4))
         {
             spdlog::error("Parse exceeds size allowed for 32 bits. Please use 64 bits executable.");
             std::exit(1);
