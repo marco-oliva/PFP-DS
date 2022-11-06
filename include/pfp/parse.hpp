@@ -42,9 +42,9 @@ public:
     parse(  std::vector<uint32_t>& p_,
     size_t alphabet_size_,
     bool saP_flag_ = true,
-    bool isaP_flag_ = true,
-    bool lcpP_flag_ = true,
-    bool rmq_lcp_P_flag_ = true ):
+    bool isaP_flag_ = false,
+    bool lcpP_flag_ = false,
+    bool rmq_lcp_P_flag_ = false ):
     p(p_),
     alphabet_size(alphabet_size_)
     {
@@ -55,9 +55,9 @@ public:
     parse(  std::string filename,
     size_t alphabet_size_,
     bool saP_flag_ = true,
-    bool isaP_flag_ = true,
-    bool lcpP_flag_ = true,
-    bool rmq_lcp_P_flag_ = true ):
+    bool isaP_flag_ = false,
+    bool lcpP_flag_ = false,
+    bool rmq_lcp_P_flag_ = false ):
     alphabet_size(alphabet_size_)
     {
         // Building dictionary from file
