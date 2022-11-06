@@ -49,7 +49,7 @@ public:
     sdsl::bit_vector b_d; // Starting position of each phrase in D
     sdsl::bit_vector::rank_1_type rank_b_d;
     sdsl::bit_vector::select_1_type select_b_d;
-    std::vector<int_t> colex_daD;
+    std::vector<uint_t> colex_daD;
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
     std::vector<uint_t> colex_id;
@@ -61,7 +61,7 @@ public:
     bool daD_flag = false;
     bool lcpD_flag = false;
     bool rmq_lcp_D_flag = false;
-    bool colex_id_flag_ = false;
+    bool colex_id_flag = false;
     bool colex_daD_flag = false;
     
     std::size_t w;
@@ -220,6 +220,7 @@ public:
         {
         // co-lex document array of the dictionary.
         spdlog::info("Computing co-lex order of dictionary");
+        colex_id_flag = true;
         _elapsed_time(
         // {
         //   std::vector<uint_t>colex_id(n_phrases());
@@ -294,11 +295,14 @@ public:
                       }
                   } );
         
+        spdlog::info("Building colex id array of D");
         for (i = 0; i < colex_id.size(); i++) { colex_id[i] = rev_dict[i].second; }
         for (i = 0; i < colex_id.size(); i++) { inv_colex_id[colex_id[i]] = i; }
         
         if (colex_daD_flag_)
         {
+            spdlog::info("Building colex DA of D");
+            colex_daD_flag = true;
             colex_daD.resize(d.size());
             for (i = 0; i < colex_daD.size(); ++i)
             {
@@ -383,6 +387,8 @@ public:
 
 template <>
 void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_){
+    
+    spdlog::info("Building colex id array of D");
     colex_id.resize(n_phrases());
     inv_colex_id.resize(n_phrases());
     
@@ -453,6 +459,8 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
     
     if (colex_daD_flag_)
     {
+        spdlog::info("Building colex DA of D");
+        colex_daD_flag = true;
         colex_daD.resize(d.size());
         for (uint_t i = 0; i < colex_daD.size(); ++i)
         {
