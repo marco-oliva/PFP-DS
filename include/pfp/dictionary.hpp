@@ -61,6 +61,7 @@ public:
     bool daD_flag = false;
     bool lcpD_flag = false;
     bool rmq_lcp_D_flag = false;
+    bool colex_id_flag_ = false;
     bool colex_daD_flag = false;
     
     std::size_t w;
@@ -80,10 +81,11 @@ public:
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
                bool rmq_lcp_D_flag_ = true,
+               bool colex_id_flag_ = true,
                bool colex_daD_flag = true):
                d(d_), w(w), colex_comparator(colex_comparator)
     {
-        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_daD_flag);
+        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
         //assert(d[0] == Dollar);
     }
     
@@ -95,6 +97,7 @@ public:
                bool daD_flag_ = true,
                bool lcpD_flag_ = true,
                bool rmq_lcp_D_flag_ = true,
+               bool colex_id_flag_ = true,
                bool colex_daD_flag = true):
               w(w), colex_comparator(colex_comparator)
     {
@@ -111,7 +114,7 @@ public:
         std::vector<data_type> dollars(w-n_dollars,Dollar);
         d.insert(d.begin(), dollars.begin(),dollars.end());
         
-        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_daD_flag);
+        build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
     }
     
     inline size_t length_of_phrase(size_t id) {
@@ -123,7 +126,7 @@ public:
         return rank_b_d(d.size()-1);
     }
     
-    void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_, bool colex_daD_flag_){
+    void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_, bool colex_id_flag_, bool colex_daD_flag_){
         
         if ((d.size() > (0x7FFFFFFF - 2)) and (sizeof(uint_t) == 4))
         {
@@ -212,11 +215,11 @@ public:
             );
         }
 
-        assert(!colex_daD_flag_ || daD_flag_);
-        if(colex_daD_flag_)
+        assert(!(colex_daD_flag_ || colex_id_flag_) || daD_flag_);
+        if(colex_daD_flag_ or colex_id_flag_)
         {
         // co-lex document array of the dictionary.
-        spdlog::info("Computing co-lex DA of dictionary");
+        spdlog::info("Computing co-lex order of dictionary");
         _elapsed_time(
         // {
         //   std::vector<uint_t>colex_id(n_phrases());
@@ -240,14 +243,14 @@ public:
         //     colex_daD[i]  = inv_colex_id[daD[i]];
         //   }
         // }
-            compute_colex_da();
+            compute_colex_da(colex_id_flag_, colex_daD_flag_);
             rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
             rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
         );
         }
     }
     
-    void compute_colex_da()
+    void compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_)
     {
         colex_id.resize(n_phrases());
         inv_colex_id.resize(n_phrases());
@@ -294,11 +297,15 @@ public:
         for (i = 0; i < colex_id.size(); i++) { colex_id[i] = rev_dict[i].second; }
         for (i = 0; i < colex_id.size(); i++) { inv_colex_id[colex_id[i]] = i; }
         
-        colex_daD.resize(d.size());
-        for (i = 0; i < colex_daD.size(); ++i)
+        if (colex_daD_flag_)
         {
-            colex_daD[i] = inv_colex_id.at(daD[i] % inv_colex_id.size());
+            colex_daD.resize(d.size());
+            for (i = 0; i < colex_daD.size(); ++i)
+            {
+                colex_daD[i] = inv_colex_id.at(daD[i] % inv_colex_id.size());
+            }
         }
+        
     }
     
     // Serialize to a stream.
@@ -375,10 +382,11 @@ public:
 
 
 template <>
-void dictionary<uint8_t>::compute_colex_da(){
+void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_){
     colex_id.resize(n_phrases());
-    std::vector<uint_t> inv_colex_id(n_phrases()); // I am using it as starting positions
-    for (int i = 0, j = 0; i < d.size(); ++i)
+    inv_colex_id.resize(n_phrases());
+    
+    for (uint_t i = 0, j = 0; i < d.size(); ++i)
         if (d[i + 1] == EndOfWord)
         {
             colex_id[j] = j;
@@ -386,15 +394,15 @@ void dictionary<uint8_t>::compute_colex_da(){
         }
 
     // buckets stores the begin and the end of each bucket.
-    std::queue<std::pair<int,int> > buckets;
+    std::queue<std::pair<uint_t,uint_t> > buckets;
     // the first bucket is the whole array.
     buckets.push({0,colex_id.size()});
 
     // for each bucket
     while(!buckets.empty()){
         auto bucket = buckets.front(); buckets.pop();
-        int start = bucket.first;
-        int end = bucket.second;
+        uint_t start = bucket.first;
+        uint_t end = bucket.second;
         if ((start < end) && (end - start > 1))
         {
             std::vector<uint32_t> count(256, 0);
@@ -420,9 +428,9 @@ void dictionary<uint8_t>::compute_colex_da(){
 
             // Recursion
             size_t tmp_start = 0;
-            for (size_t i = 0; i < 256; ++i)
+            for (uint_t i = 0; i < 256; ++i)
             {
-                for (size_t j = 0; j < count[i]; ++j)
+                for (uint_t j = 0; j < count[i]; ++j)
                 {
                     inv_colex_id[start + j] = tmp[tmp_start];
                     colex_id[start + j] = tmp_id[tmp_start++];
@@ -438,17 +446,20 @@ void dictionary<uint8_t>::compute_colex_da(){
     }
 
     // computing inverse colex id
-    for (int i = 0; i < colex_id.size(); ++i)
+    for (uint_t i = 0; i < colex_id.size(); ++i)
     {
         inv_colex_id[colex_id[i]] = i;
     }
-    // colex_id.clear();
-
-    colex_daD.resize(d.size());
-    for (int i = 0; i < colex_daD.size(); ++i)
+    
+    if (colex_daD_flag_)
     {
-        colex_daD[i] = inv_colex_id[daD[i]];
+        colex_daD.resize(d.size());
+        for (uint_t i = 0; i < colex_daD.size(); ++i)
+        {
+            colex_daD[i] = inv_colex_id[daD[i]];
+        }
     }
+    
 }
 
 }
