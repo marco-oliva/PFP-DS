@@ -220,14 +220,21 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     std::vector<uint_t> frequencies(dict.size() + 1, 0);
     for (auto& p_id : parse) { frequencies[p_id] += 1; }
 
-    std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
-
     // build pfp
     parse.push_back(0);
     std::less<uint8_t> lex_comp;
-    pfpds::pf_parsing<uint8_t> pfp(dict2, lex_comp, parse, frequencies, w);
-
+    pfpds::pf_parsing<uint8_t> pfp(dict2, lex_comp, parse, frequencies, w, 0, true, true);
+    
+    std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
     REQUIRE(pfp.dict.colex_id == colex_id);
+    
+    REQUIRE(pfp.bwt_P_ilist_built);
+    for (std::size_t b_it = 0; b_it < pfp.w_wt.size(); b_it++)
+    {
+        auto phrase = pfp.w_wt[b_it];
+        auto phrase_rank = pfp.w_wt.rank(b_it, phrase);
+        REQUIRE(pfp.bwt_p_ilist[phrase][phrase_rank] == b_it);
+    }
 }
 
 //------------------------------------------------------------------------------

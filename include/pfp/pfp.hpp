@@ -51,20 +51,24 @@ public:
     std::vector<uint_t> freq;
     size_t n; // Size of the text
     size_t w; // Size of the window
-    size_t shift;
     
     sdsl::bit_vector b_bwt;
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
     sdsl::bit_vector::select_1_type b_bwt_select_1;
     std::vector<M_entry_t> M;
     
-    std::vector<std::vector<std::size_t>> Q;
-    
     wt_t w_wt;
+    
+    size_t shift;
+    
+    std::vector<std::vector<uint_t>> bwt_p_ilist;
     
     sdsl::bit_vector b_p;
     sdsl::bit_vector::rank_1_type rank_b_p;
     sdsl::bit_vector::select_1_type select_b_p;
+    
+    bool W_built = false;
+    bool bwt_P_ilist_built = false;
     
     typedef size_t size_type;
     
@@ -75,11 +79,11 @@ public:
     colex_comparator_type& colex_comparator,
     std::vector<uint32_t> &p_,
     std::vector<uint_t> &freq_,
-    size_t w_, std::size_t shift = 0) :
+    size_t w_, std::size_t shift = 0,
+    bool build_W_flag = true, bool build_bwt_P_ilist_flag = false) :
     dict(d_, w_, colex_comparator),
     pars(p_, dict.n_phrases() + 1),
     freq(freq_),
-    Q(dict.alphabet_size),
     w(w_),
     shift(shift)
     {
@@ -89,24 +93,33 @@ public:
         // Compute the length of the string;
         compute_n();
         
-        spdlog::info("Computing b_p");
-        _elapsed_time(compute_b_p());
+        if (build_W_flag)
+        {
+            spdlog::info("Computing b_p");
+            _elapsed_time(compute_b_p());
         
-        spdlog::info("Computing b_bwt and M of the parsing");
-        _elapsed_time(build_b_bwt_and_M());
-
-        spdlog::info("Computing W of BWT(P)");
-        _elapsed_time(build_W());
+            spdlog::info("Computing b_bwt and M of the parsing");
+            _elapsed_time(build_b_bwt_and_M());
+            
+            spdlog::info("Computing W of BWT(P)");
+            _elapsed_time(build_W());
+        }
+        
+        if (build_bwt_P_ilist_flag)
+        {
+            spdlog::info("Computing inverted list of BWT(P)");
+            _elapsed_time(build_bwt_P_ilist());
+        }
 
         // Clear unnecessary elements
         clear_unnecessary_elements();
     }
     
-    pf_parsing( std::string filename, size_t w_, colex_comparator_type& colex_comparator, std::size_t shift = 0):
+    pf_parsing( std::string filename, size_t w_, colex_comparator_type& colex_comparator,
+    std::size_t shift = 0, bool build_W_flag = true, bool build_bwt_P_ilist_flag = false):
     dict(filename, w_, colex_comparator),
     pars(filename,dict.n_phrases()+1),
     freq(dict.n_phrases() + 1,0),
-    Q(dict.alphabet_size),
     w(w_),
     shift(shift)
     {
@@ -117,15 +130,26 @@ public:
         compute_n();
         
         // b_p(pfp.n,0);
-        spdlog::info("Computing b_p");
-        _elapsed_time(compute_b_p());
+
+        if (build_W_flag)
+        {
+            spdlog::info("Computing b_p");
+            _elapsed_time(compute_b_p());
         
-        spdlog::info("Computing b_bwt and M of the parsing");
-        _elapsed_time(build_b_bwt_and_M());
-
-        spdlog::info("Computing W of BWT(P)");
-        _elapsed_time(build_W());
-
+            spdlog::info("Computing b_bwt and M of the parsing");
+            _elapsed_time(build_b_bwt_and_M());
+            
+            spdlog::info("Computing W of BWT(P)");
+            _elapsed_time(build_W());
+        }
+        
+        if (build_bwt_P_ilist_flag)
+        {
+            spdlog::info("Computing inverted list of BWT(P)");
+            _elapsed_time(build_bwt_P_ilist());
+        }
+        
+        
         // Clear unnecessary elements
         clear_unnecessary_elements();
     }
@@ -234,7 +258,10 @@ public:
         b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
     }
     
-    void build_W() {
+    void build_W()
+    {
+        this->W_built = true;
+        
         // create alphabet (phrases)
         std::vector<uint32_t> alphabet(dict.n_phrases());
         for (size_t i = 0; i < dict.n_phrases(); ++i) {
@@ -252,6 +279,19 @@ public:
         }
         
         w_wt.construct(alphabet, bwt_p);
+    }
+    
+    void build_bwt_P_ilist()
+    {
+        this->bwt_P_ilist_built = true;
+        
+        // create BWT(P)
+        bwt_p_ilist.resize(dict.n_phrases() + 1);
+        for (size_t i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
+        {
+            if (pars.saP[i] > 0) { bwt_p_ilist[pars.p[pars.saP[i] - 1]].emplace_back(i - 1); }
+            else { bwt_p_ilist[pars.p[pars.p.size() - 2]].emplace_back(i - 1); }
+        }
     }
     
     void clear_unnecessary_elements(){
