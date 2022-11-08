@@ -131,14 +131,14 @@ public:
         
         // b_p(pfp.n,0);
 
+        spdlog::info("Computing b_p");
+        _elapsed_time(compute_b_p());
+        
+        spdlog::info("Computing b_bwt and M of the parsing");
+        _elapsed_time(build_b_bwt_and_M());
+        
         if (build_W_flag)
         {
-            spdlog::info("Computing b_p");
-            _elapsed_time(compute_b_p());
-        
-            spdlog::info("Computing b_bwt and M of the parsing");
-            _elapsed_time(build_b_bwt_and_M());
-            
             spdlog::info("Computing W of BWT(P)");
             _elapsed_time(build_W());
         }
