@@ -124,7 +124,8 @@ public:
     shift(shift)
     {
         // Generating freq
-        for (std::size_t i = 0; i < pars.p.size(); i++) { freq[pars.p[i]] += 1; }
+        for (std::size_t i = 0; i < pars.p.size() - 1; i++) { freq[pars.p[i]] += 1; } // p ends with 0
+        assert(freq[0] == 0);
         
         // Compute the length of the string;
         compute_n();
