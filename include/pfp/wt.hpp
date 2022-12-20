@@ -35,7 +35,7 @@ namespace pfpds
 
 class pfp_wt {
 public:
-    using size_type = size_t;
+    using size_type = unsigned long long;
     
     pfp_wt() {};
     pfp_wt(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse) {};
