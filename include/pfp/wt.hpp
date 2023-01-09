@@ -35,7 +35,7 @@ namespace pfpds
 
 class pfp_wt {
 public:
-    using size_type = unsigned long long;
+    using size_type = std::size_t;
     
     pfp_wt() {};
     pfp_wt(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse) {};
@@ -491,11 +491,6 @@ public:
     
     size_type range_count_2d(const uint32_t t, const size_type i) const override {
         return wt_i.range_search_2d(0, i - 1, 0, t, false).first;
-    }
-
-    std::vector<std::pair<size_type, size_type>>
-    range_search_2d(const uint32_t t, const uint32_t b, const size_type i) const {
-        return wt_i.range_search_2d(0, i - 1, t, b, true).second;
     }
 
     size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
