@@ -130,7 +130,7 @@ public:
         
         if ((d.size() > (0x7FFFFFFF - 2)) and (sizeof(uint_t) == 4))
         {
-            spdlog::error("Parse exceeds size allowed for 32 bits. Please use 64 bits executable.");
+            spdlog::error("Dictionary exceeds size allowed for 32 bits. Please use 64 bits executable.");
             std::exit(1);
         }
         else
