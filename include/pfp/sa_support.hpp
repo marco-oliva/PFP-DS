@@ -42,11 +42,11 @@ public:
     
     pfp_sa_support(const pf_parsing<dict_data_type, colex_comparator_type, wt_t>& pfp_) : pfp(pfp_) {}
     
-    size_t size() const {
+    long_type size() const {
         return pfp.n;
     }
     
-    std::size_t operator()(std::size_t i) {
+    long_type operator()(long_type i) {
         // i + 1 -> rank is for (0 ... i - 1) interval
         const auto rank_i = pfp.b_bwt_rank_1(i + 1);
         const auto lex_rank_i = rank_i - 1;
@@ -63,7 +63,7 @@ public:
         else
             p_i = pfp.pars.p.size() - 2;
         
-        size_t occ_k_next;
+        long_type occ_k_next;
         if (p_i + 2 > pfp.pars.p.size() - 1)
             occ_k_next = pfp.n;
         else

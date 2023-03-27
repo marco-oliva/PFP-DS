@@ -42,7 +42,7 @@ class dictionary
 
 public:
     std::vector<data_type> d;
-    std::vector<std::size_t> saD;
+    std::vector<long_type> saD;
     sdsl::int_vector<0> isaD;
     sdsl::int_vector<0> daD;
     sdsl::int_vector<0> lcpD;
@@ -53,9 +53,9 @@ public:
     sdsl::int_vector<0> colex_daD;
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
-    std::vector<std::size_t> colex_id;
-    std::vector<std::size_t> inv_colex_id;
-    std::size_t alphabet_size = 0;
+    std::vector<long_type> colex_id;
+    std::vector<long_type> inv_colex_id;
+    long_type alphabet_size = 0;
     
     bool saD_flag = false;
     bool isaD_flag = false;
@@ -65,17 +65,15 @@ public:
     bool colex_id_flag = false;
     bool colex_daD_flag = false;
     
-    std::size_t w;
-    
-    typedef size_t size_type;
+    long_type w;
     
     colex_comparator_type& colex_comparator;
     
     // default constructor for load.
     dictionary() {}
     
-    dictionary( std::vector<data_type>& d_,
-               size_t w,
+    dictionary(std::vector<data_type>& d_,
+               long_type w,
                colex_comparator_type& colex_comparator,
                bool saD_flag_ = true,
                bool isaD_flag_ = true,
@@ -91,7 +89,7 @@ public:
     }
     
     dictionary(std::string filename,
-               size_t w,
+               long_type w,
                colex_comparator_type& colex_comparator,
                bool saD_flag_ = true,
                bool isaD_flag_ = true,
@@ -118,12 +116,12 @@ public:
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
     }
     
-    inline size_t length_of_phrase(size_t id) {
+    inline long_type length_of_phrase(long_type id) {
         assert(id > 0);
         return select_b_d(id+1)-select_b_d(id) - 1; // to remove the EndOfWord
     }
     
-    inline size_t n_phrases(){
+    inline long_type n_phrases(){
         return rank_b_d(d.size()-1);
     }
     
@@ -135,11 +133,11 @@ public:
         // Building the bitvector with a 1 in each starting position of each phrase in D
         // Also compute length of longhest phrase
         b_d.resize(d.size());
-        std::size_t max_phrase_length = 0;
-        for(std::size_t i = 0; i < b_d.size(); ++i) { b_d[i] = false; } // bug in resize
+        long_type max_phrase_length = 0;
+        for(long_type i = 0; i < b_d.size(); ++i) { b_d[i] = false; } // bug in resize
         b_d[0] = true; // Mark the first phrase
-        std::size_t prev_start = 0;
-        for(std::size_t i = 1; i < d.size(); ++i )
+        long_type prev_start = 0;
+        for(long_type i = 1; i < d.size(); ++i )
         {
             if (d[i-1] == EndOfWord)
             {
@@ -166,14 +164,14 @@ public:
         if(daD_flag_)
         {
             assert(saD_flag);
-            std::size_t bytes_daD = 0;
-            std::size_t ps = n_phrases(); assert(ps != 0);
+            long_type bytes_daD = 0;
+            long_type ps = n_phrases(); assert(ps != 0);
             while (ps != 0) { ps >>= 8; bytes_daD++; }
             spdlog::info("Using {} bytes for DA of the dictionary", bytes_daD);
             daD = sdsl::int_vector<>(d.size(), 0, bytes_daD * 8);
-            for (std::size_t i = 0; i < saD.size(); i++)
+            for (long_type i = 0; i < saD.size(); i++)
             {
-                std::size_t out = rank_b_d.rank(saD[i]);
+                long_type out = rank_b_d.rank(saD[i]);
                 if (b_d[saD[i]]) { out += 1; }
                 daD[i] = out - 1;
             }
@@ -184,12 +182,12 @@ public:
         if (isaD_flag_)
         {
             assert(saD_flag);
-            std::size_t bytes_isaD = 0;
-            std::size_t max_sa = d.size() + 1;
+            long_type bytes_isaD = 0;
+            long_type max_sa = d.size() + 1;
             while (max_sa != 0) { max_sa >>= 8; bytes_isaD++; }
             spdlog::info("Using {} bytes for ISA of the dictionary", bytes_isaD);
             isaD = sdsl::int_vector<>(d.size(), 0, bytes_isaD * 8);
-            for (std::size_t i = 0; i < saD.size(); i++) { isaD[saD[i]] = i; }
+            for (long_type i = 0; i < saD.size(); i++) { isaD[saD[i]] = i; }
             isaD_flag = true;
         }
         
@@ -197,22 +195,22 @@ public:
         if (lcpD_flag_)
         {
             assert(saD_flag and isaD_flag);
-            std::size_t bytes_lcpD = 0;
-            std::size_t mpl = max_phrase_length;
+            long_type bytes_lcpD = 0;
+            long_type mpl = max_phrase_length;
             while (mpl != 0) { mpl >>= 8; bytes_lcpD++; }
             spdlog::info("Using {} bytes for LCP of the dictionary", bytes_lcpD);
             lcpD = sdsl::int_vector<>(d.size(), 0, bytes_lcpD * 8);
     
             // Kasai et al. LCP construction algorithm
             lcpD[0]  = 0;
-            std::size_t l = 0;
-            for (size_t i = 0; i < lcpD.size(); ++i)
+            long_type l = 0;
+            for (long_type i = 0; i < lcpD.size(); ++i)
             {
                 // if i is the last character LCP is not defined
-                std::size_t k = isaD[i];
+                long_type k = isaD[i];
                 if(k > 0)
                 {
-                    std::size_t j = saD[k-1];
+                    long_type j = saD[k-1];
                     // I find the longest common prefix of the i-th suffix and the j-th suffix.
                     while(d[i+l] == d[j+l] and d[i + l] != EndOfWord) { l++; }
                     // l stores the length of the longest common prefix between the i-th suffix and the j-th suffix
@@ -236,8 +234,8 @@ public:
         if(colex_daD_flag_ or colex_id_flag_)
         {
             assert(daD_flag);
-            std::size_t bytes_colex_daD = 0;
-            std::size_t ps = n_phrases(); assert(ps != 0);
+            long_type bytes_colex_daD = 0;
+            long_type ps = n_phrases(); assert(ps != 0);
             while (ps != 0) { ps >>= 8; bytes_colex_daD++; }
             spdlog::info("Using {} bytes for colex DA of the dictionary", bytes_colex_daD);
             colex_daD = sdsl::int_vector<>(d.size(), 0, bytes_colex_daD * 8);
@@ -258,8 +256,8 @@ public:
 
         // ---------- just sort the reversed phrases
         std::vector<std::pair<std::vector<data_type>,uint32_t>> rev_dict(n_phrases());
-        std::size_t i = 0;
-        std::size_t rank = 0;
+        long_type i = 0;
+        long_type rank = 0;
         while(i < d.size()-1)
         {
             while((i < d.size()-1) and (d[i] != EndOfWord)) { rev_dict[rank].first.emplace_back(d[i++]); }
@@ -305,10 +303,10 @@ public:
     }
     
     // Serialize to a stream.
-    size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
+    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
     {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        size_type written_bytes = 0;
+        long_type written_bytes = 0;
         
 //        written_bytes += my_serialize(d, out, child, "dictionary");
 //        written_bytes += my_serialize(saD, out, child, "saD");
@@ -384,7 +382,7 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
     colex_id.resize(n_phrases());
     inv_colex_id.resize(n_phrases());
 
-    for (std::size_t i = 0, j = 0; i < d.size(); ++i)
+    for (long_type i = 0, j = 0; i < d.size(); ++i)
         if (d[i + 1] == EndOfWord)
         {
             colex_id[j] = j;
@@ -392,7 +390,7 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
         }
 
     // buckets stores the start and the end of each bucket.
-    std::queue<std::pair<std::size_t,std::size_t>> buckets;
+    std::queue<std::pair<long_type,long_type>> buckets;
     // the first bucket is the whole array.
     buckets.push({0,colex_id.size()});
 
@@ -400,36 +398,36 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
     while(not buckets.empty())
     {
         auto bucket = buckets.front(); buckets.pop();
-        std::size_t start = bucket.first;
-        std::size_t  end = bucket.second;
+        long_type start = bucket.first;
+        long_type  end = bucket.second;
         if ((start < end) && (end - start > 1))
         {
             std::vector<uint32_t> count(256, 0);
-            for (size_t i = start; i < end; ++i)
+            for (long_type i = start; i < end; ++i)
             {
                 count[d[inv_colex_id[i]]]++;
             }
 
             std::vector<uint32_t> psum(256, 0);
-            for (size_t i = 1; i < 256; ++i)
+            for (long_type i = 1; i < 256; ++i)
             {
                 psum[i] = psum[i - 1] + count[i - 1];
             }
 
-            std::vector<std::size_t > tmp(end - start, 0);
-            std::vector<std::size_t > tmp_id(end - start, 0);
-            for (size_t i = start; i < end; ++i)
+            std::vector<long_type > tmp(end - start, 0);
+            std::vector<long_type > tmp_id(end - start, 0);
+            for (long_type i = start; i < end; ++i)
             {
-                size_t index = psum[d[inv_colex_id[i]]]++;
-                tmp[index] = std::min(inv_colex_id[i] - 1, static_cast<std::size_t >(d.size() - 1));
+                long_type index = psum[d[inv_colex_id[i]]]++;
+                tmp[index] = std::min(inv_colex_id[i] - 1, (long_type) d.size() - 1);
                 tmp_id[index] = colex_id[i];
             }
 
             // Recursion
-            size_t tmp_start = 0;
-            for (std::size_t  i = 0; i < 256; ++i)
+            long_type tmp_start = 0;
+            for (long_type  i = 0; i < 256; ++i)
             {
-                for (std::size_t  j = 0; j < count[i]; ++j)
+                for (long_type  j = 0; j < count[i]; ++j)
                 {
                     inv_colex_id[start + j] = tmp[tmp_start];
                     colex_id[start + j] = tmp_id[tmp_start++];
@@ -443,7 +441,7 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
     }
 
     // computing inverse colex id
-    for (std::size_t  i = 0; i < colex_id.size(); ++i)
+    for (long_type  i = 0; i < colex_id.size(); ++i)
     {
         inv_colex_id[colex_id[i]] = i;
     }
@@ -451,7 +449,7 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
     if (colex_daD_flag_)
     {
         colex_daD.resize(d.size());
-        for (std::size_t  i = 0; i < colex_daD.size(); ++i)
+        for (long_type  i = 0; i < colex_daD.size(); ++i)
         {
             colex_daD[i] = inv_colex_id[daD[i]];
         }

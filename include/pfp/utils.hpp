@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include <unistd.h>
-#include <stdint.h>
+#include <cstdint>
 #include <cmath>
 
 #include <spdlog/spdlog.h>

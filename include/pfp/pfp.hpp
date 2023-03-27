@@ -49,8 +49,8 @@ public:
     dictionary<dict_data_type, colex_comparator_type> dict;
     parse pars;
     std::vector<long_type> freq;
-    size_t n; // Size of the text
-    size_t w; // Size of the window
+    long_type n; // Size of the text
+    long_type w; // Size of the window
     
     sdsl::bit_vector b_bwt;
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
@@ -59,7 +59,7 @@ public:
     
     wt_t w_wt;
     
-    size_t shift;
+    long_type shift;
     
     std::vector<std::vector<long_type>> bwt_p_ilist;
     
@@ -70,8 +70,6 @@ public:
     bool W_built = false;
     bool bwt_P_ilist_built = false;
     
-    typedef size_t size_type;
-    
     // Default constructor for load
     pf_parsing() {}
     
@@ -79,7 +77,7 @@ public:
     colex_comparator_type& colex_comparator,
     std::vector<uint32_t> &p_,
     std::vector<long_type> &freq_,
-    size_t w_, std::size_t shift = 0,
+    long_type w_, long_type shift = 0,
     bool build_W_flag = true, bool build_bwt_P_ilist_flag = false) :
     dict(d_, w_, colex_comparator),
     pars(p_, dict.n_phrases() + 1),
@@ -115,8 +113,8 @@ public:
         clear_unnecessary_elements();
     }
     
-    pf_parsing( std::string filename, size_t w_, colex_comparator_type& colex_comparator,
-    std::size_t shift = 0, bool build_W_flag = true, bool build_bwt_P_ilist_flag = false):
+    pf_parsing( std::string filename, long_type w_, colex_comparator_type& colex_comparator,
+    long_type shift = 0, bool build_W_flag = true, bool build_bwt_P_ilist_flag = false):
     dict(filename, w_, colex_comparator),
     pars(filename,dict.n_phrases()+1),
     freq(dict.n_phrases() + 1,0),
@@ -124,7 +122,7 @@ public:
     shift(shift)
     {
         // Generating freq
-        for (std::size_t i = 0; i < pars.p.size() - 1; i++) { freq[pars.p[i]] += 1; } // p ends with 0
+        for (long_type i = 0; i < pars.p.size() - 1; i++) { freq[pars.p[i]] += 1; } // p ends with 0
         assert(freq[0] == 0);
         
         // Compute the length of the string;
@@ -158,11 +156,11 @@ public:
     void compute_b_p() {
         // Build the bitvector storing the position of the beginning of each phrase.
         b_p.resize(this->n); // all should be initialized at false by sdsl
-        for(size_t i = 0; i < b_p.size(); ++i)
+        for(long_type i = 0; i < b_p.size(); ++i)
             b_p[i] = false; // bug in resize
         b_p[0] = true; // phrase_0 becomes phrase 1
         
-        size_t i = 0;
+        long_type i = 0;
         
         for(int j = 0; j < pars.p.size()-2; ++j){ // -2 because the beginning of the last phrase is in position 0
             // p[i]: phrase_id
@@ -193,22 +191,22 @@ public:
     void build_b_bwt_and_M()
     {
         b_bwt.resize(n);
-        for (size_t i = 0; i < b_bwt.size(); ++i)
+        for (long_type i = 0; i < b_bwt.size(); ++i)
             b_bwt[i] = false; // bug in resize
         
         assert(dict.d[dict.saD[0]] == EndOfDict);
-        size_t i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
-        size_t j = 0;
+        long_type i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
+        long_type j = 0;
 
         while (i < dict.saD.size())
         {
-            size_t left = i;
+            long_type left = i;
             
             auto sn = dict.saD[i];
             // Check if the suffix has length at least w and is not the complete phrase.
             auto phrase = dict.daD[i] + 1;
             assert(phrase > 0 && phrase < freq.size()); // + 1 because daD is 0-based
-            size_t suffix_length = dict.select_b_d(dict.rank_b_d(sn + 1) + 1) - sn - 1;
+            long_type suffix_length = dict.select_b_d(dict.rank_b_d(sn + 1) + 1) - sn - 1;
             if (dict.b_d[sn] || suffix_length < dict.w)
             {
                 ++i; // Skip
@@ -226,7 +224,7 @@ public:
                     auto new_sn = dict.saD[i];
                     auto new_phrase = dict.daD[i] + 1;
                     assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
-                    size_t new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
+                    long_type new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
                     
                     while (i < dict.saD.size() && (dict.lcpD[i] >= suffix_length) && (suffix_length == new_suffix_length))
                     {
@@ -244,7 +242,7 @@ public:
                 }
                 
                 // Computing M
-                size_t right = i - 1;
+                long_type right = i - 1;
                 M_entry_t m;
                 m.len = suffix_length;
                 m.left = dict.colex_daD[dict.rmq_colex_daD(left, right)];
@@ -265,13 +263,13 @@ public:
         
         // create alphabet (phrases)
         std::vector<uint32_t> alphabet(dict.n_phrases());
-        for (size_t i = 0; i < dict.n_phrases(); ++i) {
+        for (long_type i = 0; i < dict.n_phrases(); ++i) {
             alphabet[i] = dict.colex_id[i] + 1;
         }
         
         // create BWT(P)
         std::vector<uint32_t> bwt_p(pars.p.size() - 1, 0);
-        for (size_t i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
+        for (long_type i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
         {
             if (pars.saP[i] > 0)
                 bwt_p[i - 1] = pars.p[pars.saP[i] - 1];
@@ -288,7 +286,7 @@ public:
         
         // create BWT(P)
         bwt_p_ilist.resize(dict.n_phrases() + 1);
-        for (size_t i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
+        for (long_type i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
         {
             if (pars.saP[i] > 0) { bwt_p_ilist[pars.p[pars.saP[i] - 1]].emplace_back(i - 1); }
             else { bwt_p_ilist[pars.p[pars.p.size() - 2]].emplace_back(i - 1); }
@@ -306,10 +304,10 @@ public:
     }
     
     // Serialize to a stream.
-    size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
+    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
     {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        size_type written_bytes = 0;
+        long_type written_bytes = 0;
         
         written_bytes += dict.serialize(out, child, "dictionary");
         written_bytes += pars.serialize(out, child, "parse");

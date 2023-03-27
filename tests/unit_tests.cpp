@@ -73,7 +73,7 @@ TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
     pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
 
     bool all_good = true;
-    for (std::size_t i = 0; i < yeast.size(); i++)
+    for (pfpds::long_type i = 0; i < yeast.size(); i++)
     {
         all_good = all_good and (yeast[i] == ra_support(i));
         if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast.size()); break; }
@@ -91,7 +91,7 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
     pfpds::pfp_ra_support<uint32_t> ra_support(pfp);
 
     bool all_good = true;
-    for (std::size_t i = 0; i < yeast_parse.size(); i++)
+    for (pfpds::long_type i = 0; i < yeast_parse.size(); i++)
     {
         all_good = all_good and (yeast_parse[i] + 10 == ra_support(i));
         if (not all_good) { spdlog::error("mismatch at {} over {}", i, yeast_parse.size()); break; }
@@ -101,14 +101,14 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 
 TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 {
-    std::size_t w = 10;
+    pfpds::long_type w = 10;
 
     std::less<char> char_comp;
     pfpds::pf_parsing<char> pfp(testfiles_dir + "/yeast.fasta", w, char_comp);
     pfpds::pfp_sa_support<char> sa_support(pfp);
     
     // Check dats structures
-    std::vector<std::size_t> da_d, sa_d;
+    std::vector<pfpds::long_type> da_d, sa_d;
     std::vector<int64_t> lcp_d;
     sa_d.resize(pfp.dict.d.size());
     lcp_d.resize(pfp.dict.d.size());
@@ -117,13 +117,13 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     
     bool all_good = true;
     
-    for (std::size_t i = 0; i < sa_d.size(); i++) { all_good = all_good and (pfp.dict.saD[i] == sa_d[i]); }
+    for (pfpds::long_type i = 0; i < sa_d.size(); i++) { all_good = all_good and (pfp.dict.saD[i] == sa_d[i]); }
     REQUIRE(all_good);
     
-    for (std::size_t i = 0; i < da_d.size(); i++) { all_good = all_good and (pfp.dict.daD[i] == da_d[i]); }
+    for (pfpds::long_type i = 0; i < da_d.size(); i++) { all_good = all_good and (pfp.dict.daD[i] == da_d[i]); }
     REQUIRE(all_good);
     
-    for (std::size_t i = 0; i < lcp_d.size(); i++) { all_good = all_good and (pfp.dict.lcpD[i] == lcp_d[i]); }
+    for (pfpds::long_type i = 0; i < lcp_d.size(); i++) { all_good = all_good and (pfp.dict.lcpD[i] == lcp_d[i]); }
     REQUIRE(all_good);
 
     // TEST sa_ds
@@ -139,12 +139,12 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     sdsl::construct_im(csa, static_cast<const char *>(&yeast[0]), num_bytes);
 
     all_good = true;
-    for (std::size_t i = 0; i < yeast.size(); ++i)
+    for (pfpds::long_type i = 0; i < yeast.size(); ++i)
     {
         all_good = all_good and (sa_support(i) == ((csa[i] + (yeast.size()) - w + 1) % (yeast.size())));
         if (not all_good)
         {
-            std::size_t sa_v = sa_support(i);
+            pfpds::long_type sa_v = sa_support(i);
             break;
         }
     }
@@ -154,7 +154,7 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 
 TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 {
-    std::size_t w = 5;
+    pfpds::long_type w = 5;
 
     std::less<uint32_t> int_comp;
     pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
@@ -167,11 +167,11 @@ TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 
     std::vector<uint_t> yeast_parse_SA;
     yeast_parse_SA.resize(yeast_parse.size());
-    std::size_t alphabet_size = (*std::max_element(yeast_parse.begin(), yeast_parse.end())) + 1;
+    pfpds::long_type alphabet_size = (*std::max_element(yeast_parse.begin(), yeast_parse.end())) + 1;
     sacak_int(&yeast_parse[0],&yeast_parse_SA[0],yeast_parse.size(), alphabet_size);
 
     bool all_good = true;
-    for (std::size_t i = 1; i < yeast_parse.size(); ++i)
+    for (pfpds::long_type i = 1; i < yeast_parse.size(); ++i)
     {
         all_good = all_good and (sa_support(i + w - 1) == yeast_parse_SA[i]);
         if (not all_good) { break; }
@@ -182,7 +182,7 @@ TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 
 TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
 {
-    size_t w = 2;
+    pfpds::long_type w = 2;
 
     std::vector<char> text = {'A','C','G','T','T','C','G','C','A','A','C','T','A','G','T','C','C','G','G','G','A','G','T','T','A','C','#',
                               'A','C','G','T','T','C','G','G','A','A','T','A','G','T','T','C','C','G','G','G','A','G','G','T','T','A','A','C','#',
@@ -253,7 +253,7 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     REQUIRE(pfp.dict.colex_id == colex_id);
 
     REQUIRE(pfp.bwt_P_ilist_built);
-    for (std::size_t b_it = 0; b_it < pfp.w_wt.size(); b_it++)
+    for (pfpds::long_type b_it = 0; b_it < pfp.w_wt.size(); b_it++)
     {
         auto phrase = pfp.w_wt[b_it];
         auto phrase_rank = pfp.w_wt.rank(b_it, phrase);

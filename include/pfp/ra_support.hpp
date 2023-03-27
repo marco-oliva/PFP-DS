@@ -26,18 +26,18 @@ public:
     
     pfp_ra_support(const pf_parsing<dict_data_type, colex_comparator_type, wt_t>& pfp_) : pfp(pfp_) {}
     
-    size_t size() const { return pfp.n; }
+    long_type size() const { return pfp.n; }
     
-    dict_data_type operator()(std::size_t i)
+    dict_data_type operator()(long_type i)
     {
         // get phrase rank
-        std::size_t phrase_rank = pfp.rank_b_p.rank(i + pfp.w);
+        long_type phrase_rank = pfp.rank_b_p.rank(i + pfp.w);
 
         assert(phrase_rank != 0);
-        std::size_t phrase_offset = pfp.select_b_p(phrase_rank);
+        long_type phrase_offset = pfp.select_b_p(phrase_rank);
         uint32_t phrase_id = pfp.pars.p[phrase_rank - 1];
         
-        std::size_t phrase_start = pfp.dict.select_b_d.select(phrase_id);
+        long_type phrase_start = pfp.dict.select_b_d.select(phrase_id);
         
         return pfp.dict.d[phrase_start + (i + pfp.w - phrase_offset)];
     }

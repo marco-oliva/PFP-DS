@@ -20,9 +20,9 @@ namespace pfpds
 class parse{
 public:
     std::vector<uint32_t> p;
-    std::vector<std::size_t> saP;
-    std::vector<std::size_t> isaP;
-    std::vector<std::size_t> lcpP;
+    std::vector<long_type> saP;
+    std::vector<long_type> isaP;
+    std::vector<long_type> lcpP;
     sdsl::rmq_succinct_sct<> rmq_lcp_P;
     // sdsl::bit_vector b_p; // Starting position of each phrase in D
     // sdsl::bit_vector::rank_1_type rank_b_p;
@@ -32,16 +32,14 @@ public:
     bool lcpP_flag = false;
     bool rmq_lcp_P_flag = false;
     
-    size_t alphabet_size;
-    
-    typedef size_t size_type;
+    long_type alphabet_size;
     
     // Default constructor for load
     parse() {}
     
     parse(
     std::vector<uint32_t>& p_,
-    size_t alphabet_size_,
+    long_type alphabet_size_,
     bool saP_flag_ = true,
     bool isaP_flag_ = false,
     bool lcpP_flag_ = false,
@@ -55,7 +53,7 @@ public:
     
     parse(
     std::string filename,
-    size_t alphabet_size_,
+    long_type alphabet_size_,
     bool saP_flag_ = true,
     bool isaP_flag_ = false,
     bool lcpP_flag_ = false,
@@ -87,7 +85,7 @@ public:
             assert(saP_flag);
             spdlog::info("Computing ISA of the parsing");
             isaP.resize(p.size());
-            for (std::size_t i = 0; i < saP.size(); i++) { isaP[saP[i]] = i; }
+            for (long_type i = 0; i < saP.size(); i++) { isaP[saP[i]] = i; }
             isaP_flag = true;
         }
     
@@ -111,10 +109,10 @@ public:
     }
     
     // Serialize to a stream.
-    size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
+    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
     {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        size_type written_bytes = 0;
+        long_type written_bytes = 0;
         
         written_bytes += my_serialize(p, out, child, "parse");
         written_bytes += my_serialize(saP, out, child, "saP");

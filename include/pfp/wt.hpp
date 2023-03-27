@@ -35,7 +35,6 @@ namespace pfpds
 
 class pfp_wt {
 public:
-    using size_type = std::size_t;
     
     pfp_wt() {};
     pfp_wt(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse) {};
@@ -44,26 +43,26 @@ public:
     
     virtual void construct(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse) = 0;
     
-    virtual uint32_t operator[] (const size_type i) = 0;
+    virtual uint32_t operator[] (const long_type i) = 0;
     
-    virtual size_type size() const = 0;
+    virtual long_type size() const = 0;
     
-    virtual size_type rank(const size_type i, const uint32_t c) const = 0;
-    virtual size_type select(const size_type i, const uint32_t c) const = 0;
-    virtual size_type range_count (const uint32_t t, const uint32_t b, const size_type i) const = 0;
-    virtual size_type range_count_2d (const uint32_t t, const size_type i) const = 0;
-    virtual size_type range_select (const uint32_t t, const uint32_t b, const size_type r) const {
-        size_type lo = 1;
-        size_type hi = size();
+    virtual long_type rank(const long_type i, const uint32_t c) const = 0;
+    virtual long_type select(const long_type i, const uint32_t c) const = 0;
+    virtual long_type range_count (const uint32_t t, const uint32_t b, const long_type i) const = 0;
+    virtual long_type range_count_2d (const uint32_t t, const long_type i) const = 0;
+    virtual long_type range_select (const uint32_t t, const uint32_t b, const long_type r) const {
+        long_type lo = 1;
+        long_type hi = size();
         // assert (r > 0 && r <= range_count(t, b, hi));
         
-        size_type ans = 0;
+        long_type ans = 0;
         
         // find r-th "filled column" in the interval (t, b)
         // binary search using rank_count
         while (lo <= hi) {
-            const size_type i = (lo + hi) >> 1;
-            const size_type m = range_count(t, b, i);
+            const long_type i = (lo + hi) >> 1;
+            const long_type m = range_count(t, b, i);
             
             if (m == r) {
                 ans = i - 1;
@@ -80,7 +79,7 @@ public:
     }
     
     
-    virtual size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const = 0;
+    virtual long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const = 0;
     //! Load from a stream.
     virtual void load(std::istream &in) = 0;
 private:
@@ -114,10 +113,10 @@ public:
             return parent == nullptr;
         }
         
-        size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
+        long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
         {
             sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-            size_type written_bytes = 0;
+            long_type written_bytes = 0;
             
             written_bytes += bit_vector.serialize(out, child, "bit_vector");
             written_bytes += bv_rank_1.serialize(out, child, "bv_rank_1");
@@ -154,7 +153,7 @@ public:
     };
     
     struct leaf_info {
-        size_type alphabet_index;
+        long_type alphabet_index;
         wt_node * leaf_link = nullptr;
     };
     
@@ -164,7 +163,7 @@ public:
     
     pfp_wt_custom(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse)
         : root(new wt_node()), alphabet(sorted_alphabet) {
-        for (size_type i = 0; i < alphabet.size(); ++i) {
+        for (long_type i = 0; i < alphabet.size(); ++i) {
             leafs[alphabet[i]].alphabet_index = i;
         }
         
@@ -173,7 +172,7 @@ public:
     
     void construct(const std::vector<uint32_t> & sorted_alphabet, const std::vector<uint32_t> & parse) {
         alphabet = sorted_alphabet;
-        for (size_type i = 0; i < alphabet.size(); ++i) {
+        for (long_type i = 0; i < alphabet.size(); ++i) {
             leafs[alphabet[i]].alphabet_index = i;
         }
         
@@ -186,13 +185,13 @@ public:
     }
     
     // operator[] - get phrase ID on i-th position
-    uint32_t operator[] (const size_type i) override {
+    uint32_t operator[] (const long_type i) override {
         // assert(i < root->bit_vector.size());
         
         return get_phrase_id(*root, i); // WT[] is 0-based
     }
     
-    size_type rank(const size_type i, const uint32_t c) const override {
+    long_type rank(const long_type i, const uint32_t c) const override {
         // assert(i > 0 && i <= root->bit_vector.size());
         
         if (leafs.count(c) <= 0) {
@@ -200,7 +199,7 @@ public:
         }
         
         wt_node * t_node = std::addressof(*root);
-        size_type j = i;
+        long_type j = i;
         uint32_t alphabet_size = alphabet.size();
         uint32_t alphabet_start = 0;
         while (!t_node->is_leaf()) {
@@ -226,11 +225,11 @@ public:
         return j;
     }
     
-    size_type select(const size_type i, const uint32_t c) const override {
+    long_type select(const long_type i, const uint32_t c) const override {
         // assert (i > 0 && i <= rank(size(), c));
         
         wt_node * t_node = leafs.at(c).leaf_link;
-        size_type j = i;
+        long_type j = i;
         while (!t_node->is_root()) {
             if (std::addressof(*(t_node->parent->left)) == t_node) {
                 j = t_node->parent->bv_select_0(j) + 1;
@@ -244,11 +243,11 @@ public:
         return j - 1; // return index 0-based
     }
     
-    size_type size() const override {
+    long_type size() const override {
         return root->bit_vector.size();
     }
     
-    size_type range_count (const uint32_t t, const uint32_t b, const size_type i) const override {
+    long_type range_count (const uint32_t t, const uint32_t b, const long_type i) const override {
         // assert(i > 0 && i <= root->bit_vector.size());
         
         // t and b intervals of leafs
@@ -261,17 +260,17 @@ public:
         return count_b;
     }
     
-    size_type range_count_2d (const uint32_t t, const size_type i) const override {
+    long_type range_count_2d (const uint32_t t, const long_type i) const override {
         // assert(i > 0 && i <= root->bit_vector.size());
         
         wt_node * node = std::addressof(*root);
-        const size_type alphabet_index = leafs.at(t).alphabet_index;
-        size_type alphabet_start = 0;
-        size_type alphabet_size = alphabet.size();
+        const long_type alphabet_index = leafs.at(t).alphabet_index;
+        long_type alphabet_start = 0;
+        long_type alphabet_size = alphabet.size();
         
-        size_type count = 0;
-        size_type j = i;
-        size_type rank_j = 0;
+        long_type count = 0;
+        long_type j = i;
+        long_type rank_j = 0;
         
         while (!node->is_leaf()) {
             const auto idx = alphabet_index - alphabet_start;
@@ -299,10 +298,10 @@ public:
         return count;
     }
     
-    size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
+    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
     {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        size_type written_bytes = 0;
+        long_type written_bytes = 0;
         
         written_bytes += my_serialize(alphabet, out, child, "alphabet");
         written_bytes += root->serialize(out, child, "root");
@@ -310,7 +309,7 @@ public:
         // written_bytes += root->serialize(out, child, "root");
         
         std::vector<uint32_t> tmp_phrase_ids;
-        std::vector<size_type> tmp_alphbet_indices;
+        std::vector<long_type> tmp_alphbet_indices;
         
         
         for (const auto &kv : leafs){
@@ -337,14 +336,14 @@ public:
         // root->load(in);
         
         std::vector<uint32_t> tmp_phrase_ids;
-        std::vector<size_type> tmp_alphbet_indices;
+        std::vector<long_type> tmp_alphbet_indices;
         
         my_load(tmp_phrase_ids, in);
         my_load(tmp_alphbet_indices, in);
         // sdsl::load(tmp_phrase_ids, in);
         // sdsl::load(tmp_alphbet_indices, in);
         
-        for(size_type i = 0; i < tmp_phrase_ids.size(); ++i){
+        for(long_type i = 0; i < tmp_phrase_ids.size(); ++i){
             leaf_info tmp_info;
             tmp_info.alphabet_index = tmp_alphbet_indices[i];
             leafs[tmp_phrase_ids[i]] = tmp_info;
@@ -375,7 +374,7 @@ private:
     std::unique_ptr<wt_node> root;
     std::map<uint32_t, leaf_info> leafs;
     
-    uint32_t get_phrase_id(const wt_node & node, const size_type i) const {
+    uint32_t get_phrase_id(const wt_node & node, const long_type i) const {
         if (node.is_leaf()) {
             return node.phrase_id;
         }
@@ -405,7 +404,7 @@ private:
         std::vector<uint32_t> parse_left;
         std::vector<uint32_t> parse_right;
         
-        for (size_type i = 0; i < parse.size(); i++) {
+        for (long_type i = 0; i < parse.size(); i++) {
             // TODO: direct access data structure
             const auto idx = leafs.at(parse[i]).alphabet_index - alpha_start;
             
@@ -456,12 +455,12 @@ public:
         translate.resize(sorted_alphabet.size(), 0);
         i_translate.resize(sorted_alphabet.size(), 0);
         
-        for (size_type i = 0; i < sorted_alphabet.size(); ++i) {
+        for (long_type i = 0; i < sorted_alphabet.size(); ++i) {
             translate[sorted_alphabet[i] - 1] = i;
             i_translate[i] = sorted_alphabet[i];
         }
         
-        for (size_type i = 0; i < parse.size(); ++i) {
+        for (long_type i = 0; i < parse.size(); ++i) {
             parse_translate[i] = translate[parse[i] - 1];
         }
         
@@ -469,33 +468,33 @@ public:
     }
     
     // operator[] - get phrase ID on i-th position
-    uint32_t operator[] (const size_type i) override {
+    uint32_t operator[] (const long_type i) override {
         return i_translate[wt_i[i]];
     }
     
-    size_type size() const override {
+    long_type size() const override {
         return wt_i.size();
     }
     
-    size_type rank(const size_type i, const uint32_t c) const override {
+    long_type rank(const long_type i, const uint32_t c) const override {
         return wt_i.rank(i, translate[c - 1]);
     }
     
-    size_type select(const size_type i, const uint32_t c) const override {
+    long_type select(const long_type i, const uint32_t c) const override {
         return wt_i.select(i, translate[c - 1]);
     }
     
-    size_type range_count (const uint32_t t, const uint32_t b, const size_type i) const override {
+    long_type range_count (const uint32_t t, const uint32_t b, const long_type i) const override {
         return wt_i.range_search_2d(0, i - 1, t, b, false).first;
     }
     
-    size_type range_count_2d(const uint32_t t, const size_type i) const override {
+    long_type range_count_2d(const uint32_t t, const long_type i) const override {
         return wt_i.range_search_2d(0, i - 1, 0, t, false).first;
     }
 
-    size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
+    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        size_type written_bytes = 0;
+        long_type written_bytes = 0;
         
         written_bytes += wt_i.serialize(out, child, "wt_i");
         written_bytes += my_serialize(i_translate, out, child, "i_translate");
@@ -536,12 +535,12 @@ public:
         translate.resize(sorted_alphabet.size(), 0);
         i_translate.resize(sorted_alphabet.size(), 0);
         
-        for (size_type i = 0; i < sorted_alphabet.size(); ++i) {
+        for (long_type i = 0; i < sorted_alphabet.size(); ++i) {
             translate[sorted_alphabet[i] - 1] = i;
             i_translate[i] = sorted_alphabet[i];
         }
         
-        for (size_type i = 0; i < parse.size(); ++i) {
+        for (long_type i = 0; i < parse.size(); ++i) {
             parse_translate[i] = translate[parse[i] - 1];
         }
         
@@ -549,41 +548,41 @@ public:
     }
     
     // operator[] - get phrase ID on i-th position
-    uint32_t operator[] (const size_type i) override {
+    uint32_t operator[] (const long_type i) override {
         return i_translate[wt_i[i]];
     }
     
-    size_type size() const override {
+    long_type size() const override {
         return wt_i.size();
     }
     
-    size_type rank(const size_type i, const uint32_t c) const override {
+    long_type rank(const long_type i, const uint32_t c) const override {
         return wt_i.rank(i, translate[c - 1]);
     }
     
-    size_type select(const size_type i, const uint32_t c) const override {
+    long_type select(const long_type i, const uint32_t c) const override {
         return wt_i.select(i, translate[c - 1]);
     }
     
-    size_type range_count (const uint32_t t, const uint32_t b, const size_type i) const override {
+    long_type range_count (const uint32_t t, const uint32_t b, const long_type i) const override {
         return wt_i.range_search_2d(0, i - 1, t, b, false).first;
     }
     
-    size_type range_count_2d (const uint32_t t, const size_type i) const override {
+    long_type range_count_2d (const uint32_t t, const long_type i) const override {
         return wt_i.range_search_2d(0, i - 1, 0, t, false).first;
     }
     
-    size_type range_select (const uint32_t t, const uint32_t b, const size_type r) const override {
+    long_type range_select (const uint32_t t, const uint32_t b, const long_type r) const override {
         auto res_pair = wt_i.range_search_2d(0, size(), t, b, true);
         const auto count = res_pair.first;
-        std::sort(res_pair.second.begin(), res_pair.second.end(), [](const std::pair<uint32_t, size_type> & a_p, const std::pair<uint32_t, size_type> & b_p) { return a_p.first < b_p.first; });
+        std::sort(res_pair.second.begin(), res_pair.second.end(), [](const std::pair<uint32_t, long_type> & a_p, const std::pair<uint32_t, long_type> & b_p) { return a_p.first < b_p.first; });
         
         return res_pair.second[r - 1].first;
     }
     
-    size_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
+    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const override {
         sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        size_type written_bytes = 0;
+        long_type written_bytes = 0;
         
         written_bytes += wt_i.serialize(out, child, "wt_i");
         written_bytes += sdsl::serialize(i_translate, out, child, "i_translate");
