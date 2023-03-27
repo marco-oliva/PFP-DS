@@ -296,7 +296,7 @@ public:
     }
     
     void clear_unnecessary_elements(){
-        dict.daD.clear();
+        // dict.daD.resize(0);
         // dict.colex_daD.clear();
         // dict.colex_id.clear();
         // dict.inv_colex_id.clear();

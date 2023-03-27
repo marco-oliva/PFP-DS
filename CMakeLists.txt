@@ -2,14 +2,19 @@ cmake_minimum_required(VERSION 3.15)
 
 project(PFP-DS)
 SET(VERSION_MAJOR "0")
-SET(VERSION_MINOR "1")
-SET(VERSION_PATCH "1")
+SET(VERSION_MINOR "2")
+SET(VERSION_PATCH "0")
 SET(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 set(PROJECT_VERSION ${VERSION})
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+################################################################################
+# Options
+
+option(BUILD_TESTS "Build unit test."                                       OFF)
 
 ################################################################################
 # Set a default build type if none was specified
@@ -17,7 +22,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose Release or Debug" FORCE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
 ################################################################################
 # Version number
 execute_process(
@@ -60,46 +64,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BUILD_TYPE_FLAGS}")
 
 include(FetchContent)
 
-## Add gsacak
-FetchContent_Declare(
-        gsacak
-        GIT_REPOSITORY https://github.com/felipelouza/gsa-is.git
-)
-
-FetchContent_GetProperties(gsacak)
-if(NOT gsacak_POPULATED)
-    FetchContent_Populate(gsacak)
-    add_library(gsacak OBJECT ${gsacak_SOURCE_DIR}/gsacak.c ${gsacak_SOURCE_DIR}/gsacak.h)
-    target_include_directories(gsacak PUBLIC "${gsacak_SOURCE_DIR}")
-
-    add_library(gsacak64 OBJECT ${gsacak_SOURCE_DIR}/gsacak.c ${gsacak_SOURCE_DIR}/gsacak.h)
-    target_include_directories(gsacak64 PUBLIC "${gsacak_SOURCE_DIR}")
-    target_compile_options(gsacak64 PUBLIC -DM64)
-endif()
-
-
-if(${BUILD_BENCHMARKS})
-    ## Google benchmark
-    FetchContent_Declare(
-            benchmark
-            GIT_REPOSITORY https://github.com/google/benchmark.git
-            GIT_TAG        master
-    )
-
-    FetchContent_GetProperties(benchmark)
-    if(NOT benchmark_POPULATED)
-        FetchContent_Populate(benchmark)
-        set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Enable testing of the benchmark library." FORCE)
-        add_subdirectory(${benchmark_SOURCE_DIR} ${benchmark_BINARY_DIR} EXCLUDE_FROM_ALL)
-    endif()
-endif()
-
-## Add sdsl
+# sdsl
 FetchContent_Declare(
         sdsl
         GIT_REPOSITORY https://github.com/simongog/sdsl-lite
 )
-
 FetchContent_GetProperties(sdsl)
 if(NOT sdsl_POPULATED)
     FetchContent_Populate(sdsl)
@@ -107,39 +76,21 @@ if(NOT sdsl_POPULATED)
     add_subdirectory(${sdsl_SOURCE_DIR} ${sdsl_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-## Add divsuffsort
+# divsuffsort
 FetchContent_Declare(
         divsufsort
         GIT_REPOSITORY https://github.com/simongog/libdivsufsort.git
         GIT_TAG        2.0.1
 )
-
 FetchContent_GetProperties(divsufsort)
 if(NOT divsufsort_POPULATED)
     FetchContent_Populate(divsufsort)
-
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "Do not build a shared library for libdivsufsort")
     set(BUILD_EXAMPLES OFF CACHE BOOL "Do not build libdivsufsort example")
     set(BUILD_DIVSUFSORT64 ON CACHE BOOL "Build libdivsufsort in 64-bits mode")
-
     add_subdirectory(${divsufsort_SOURCE_DIR} ${divsufsort_BINARY_DIR} EXCLUDE_FROM_ALL)
-
     target_include_directories(divsufsort PUBLIC "${divsufsort_BINARY_DIR}/include")
     target_include_directories(divsufsort64 PUBLIC "${divsufsort_BINARY_DIR}/include")
-endif()
-
-# malloc count
-FetchContent_Declare(
-        malloc_count
-        GIT_REPOSITORY https://github.com/bingmann/malloc_count.git
-        GIT_TAG        v0.7.1
-)
-FetchContent_GetProperties(malloc_count)
-if(NOT malloc_count_POPULATED)
-    FetchContent_Populate(malloc_count)
-    add_library(malloc_count OBJECT ${malloc_count_SOURCE_DIR}/malloc_count.c ${malloc_count_SOURCE_DIR}/malloc_count.h)
-    target_include_directories(malloc_count PUBLIC "${malloc_count_SOURCE_DIR}")
-    target_link_libraries(malloc_count dl)
 endif()
 
 # Catch
@@ -149,7 +100,8 @@ FetchContent_Declare(
         GIT_TAG        v3.0.1
 )
 # Making available only if building tests
-if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+FetchContent_GetProperties(Catch2)
+if (NOT Catch2_POPULATED AND (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug"))
     FetchContent_MakeAvailable(Catch2)
 endif()
 
@@ -159,10 +111,26 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
         GIT_TAG        v1.10.0
 )
-
+FetchContent_GetProperties(spdlog)
 if(NOT spdlog_POPULATED)
     FetchContent_Populate(spdlog)
-    include_directories(${spdlog_SOURCE_DIR}/include)
+endif()
+include_directories(${spdlog_SOURCE_DIR}/include)
+
+# gsacak
+FetchContent_Declare(
+        gsacak
+        GIT_REPOSITORY https://github.com/felipelouza/gsa-is.git
+)
+FetchContent_GetProperties(gsacak)
+if(NOT gsacak_POPULATED)
+    FetchContent_Populate(gsacak)
+    add_library(gsacak OBJECT ${gsacak_SOURCE_DIR}/gsacak.c ${gsacak_SOURCE_DIR}/gsacak.h)
+    target_include_directories(gsacak PUBLIC "${gsacak_SOURCE_DIR}")
+
+    add_library(gsacak64 OBJECT ${gsacak_SOURCE_DIR}/gsacak.c ${gsacak_SOURCE_DIR}/gsacak.h)
+    target_include_directories(gsacak64 PUBLIC "${gsacak_SOURCE_DIR}")
+    target_compile_options(gsacak64 PUBLIC -DM64)
 endif()
 
 
@@ -178,10 +146,7 @@ if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
     message(STATUS "Building unit tests")
 
     add_executable(unit_tests tests/unit_tests.cpp)
-    target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak divsufsort divsufsort64)
-
-    add_executable(unit_tests64 tests/unit_tests.cpp)
-    target_link_libraries(unit_tests64 Catch2::Catch2 sdsl gsacak64 divsufsort divsufsort64)
+    target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak64 divsufsort divsufsort64)
 
     enable_testing()
     add_test(NAME unit_tests COMMAND unit_tests)

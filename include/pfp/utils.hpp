@@ -155,32 +155,31 @@ void update(std::size_t num_of_bytes);
 //------------------------------------------------------------------------------
 
 template <typename data_type>
-void gsacak_templated(data_type *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k = 0)
+void gsacak_templated(data_type *s, uint64_t *SA, uint64_t n, uint64_t k = 0)
 {
     // NOP
     spdlog::error("Not executing gsacak, wrong template used."); std::exit(1);
 }
 
 template<>
-void gsacak_templated<uint8_t> (uint8_t *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
+void gsacak_templated<uint8_t> (uint8_t *s, uint64_t *SA, uint64_t n, uint64_t k)
 {
-    gsacak(s, SA, LCP, DA, n);
+    gsacak(s, SA, nullptr, nullptr, n);
 };
 
 template<>
-void gsacak_templated<char> (char *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
+void gsacak_templated<char> (char *s, uint64_t *SA, uint64_t n, uint64_t k)
 {
-    gsacak((unsigned char*) s, SA, LCP, DA, n);
+    gsacak((unsigned char*) s, SA, nullptr, nullptr, n);
 };
 
 template<>
-void gsacak_templated<uint32_t> (uint32_t *s, uint_t *SA, int_t *LCP, int_da *DA, uint_t n, uint_t k)
+void gsacak_templated<uint32_t> (uint32_t *s, uint64_t *SA, uint64_t n, uint64_t k)
 {
-    gsacak_int(s, SA, LCP, DA, n, k);
+    gsacak_int(s, SA, nullptr, nullptr, n, k);
 };
 
 //------------------------------------------------------------------------------
-
 
 template<typename T>
 void read_file(const char *filename, T*& ptr, size_t& length){
