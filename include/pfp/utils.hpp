@@ -43,22 +43,14 @@ namespace pfpds
 #define EndOfWord 1  // word delimiter for the plain dictionary file
 #define EndOfDict 0  // end of dictionary delimiter
 
-typedef uint64_t long_type;
-typedef uint32_t short_type;
-typedef int64_t long_signed_type;
-typedef int32_t short_signed_type;
-typedef uint8_t  char_type;
-
-#ifdef PFP_LONG_TYPE
-//pragma message("Using 64 bit parse")
-typedef long_type  size_type;
-typedef long_signed_type signed_type;
-#else
-//#pragma message("Using 32 bit parse")
-typedef short_type size_type;
-typedef short_signed_type signed_type;
-#endif
-typedef long_type  hash_type;
+typedef uint64_t            long_type;
+typedef uint32_t            short_type;
+typedef int64_t             long_signed_type;
+typedef int32_t             short_signed_type;
+typedef uint8_t             char_type;
+typedef long_type           size_type;
+typedef long_signed_type    signed_type;
+typedef long_type           hash_type;
 
 constexpr std::size_t KILOBYTE      = 1024;
 constexpr std::size_t MEGABYTE      = KILOBYTE * KILOBYTE;
