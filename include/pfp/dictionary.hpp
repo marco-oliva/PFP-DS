@@ -27,10 +27,11 @@
 
 #include <queue>
 
+#include "utils.hpp"
+#undef max
+
 #include <sdsl/rmq_support.hpp>
 #include <sdsl/int_vector.hpp>
-
-#include "utils.hpp"
 
 namespace pfpds
 {
