@@ -41,14 +41,14 @@ template<typename dict_data_type, typename colex_comparator_type = std::less<dic
 class pf_parsing{
 public:
     struct M_entry_t{
-        uint_t len;
-        uint_t left; // left and right are the extremes of the range
-        uint_t right;
+        long_type len;
+        long_type left; // left and right are the extremes of the range
+        long_type right;
     };
     
     dictionary<dict_data_type, colex_comparator_type> dict;
     parse pars;
-    std::vector<uint_t> freq;
+    std::vector<long_type> freq;
     size_t n; // Size of the text
     size_t w; // Size of the window
     
@@ -61,7 +61,7 @@ public:
     
     size_t shift;
     
-    std::vector<std::vector<uint_t>> bwt_p_ilist;
+    std::vector<std::vector<long_type>> bwt_p_ilist;
     
     sdsl::bit_vector b_p;
     sdsl::bit_vector::rank_1_type rank_b_p;
@@ -78,7 +78,7 @@ public:
     pf_parsing(std::vector<dict_data_type> &d_,
     colex_comparator_type& colex_comparator,
     std::vector<uint32_t> &p_,
-    std::vector<uint_t> &freq_,
+    std::vector<long_type> &freq_,
     size_t w_, std::size_t shift = 0,
     bool build_W_flag = true, bool build_bwt_P_ilist_flag = false) :
     dict(d_, w_, colex_comparator),

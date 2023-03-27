@@ -43,10 +43,10 @@ namespace pfpds
 #define EndOfWord 1  // word delimiter for the plain dictionary file
 #define EndOfDict 0  // end of dictionary delimiter
 
-typedef std::uint64_t long_type;
-typedef std::uint32_t short_type;
-typedef std::int64_t long_signed_type;
-typedef std::int32_t short_signed_type;
+typedef uint64_t long_type;
+typedef uint32_t short_type;
+typedef int64_t long_signed_type;
+typedef int32_t short_signed_type;
 typedef uint8_t  char_type;
 
 #ifdef PFP_LONG_TYPE
@@ -155,26 +155,26 @@ void update(std::size_t num_of_bytes);
 //------------------------------------------------------------------------------
 
 template <typename data_type>
-void gsacak_templated(data_type *s, uint64_t *SA, uint64_t n, uint64_t k = 0)
+void gsacak_templated(data_type *s, long_type *SA, long_type n, long_type k = 0)
 {
     // NOP
     spdlog::error("Not executing gsacak, wrong template used."); std::exit(1);
 }
 
 template<>
-void gsacak_templated<uint8_t> (uint8_t *s, uint64_t *SA, uint64_t n, uint64_t k)
+void gsacak_templated<uint8_t> (uint8_t *s, long_type *SA, long_type n, long_type k)
 {
     gsacak(s, SA, nullptr, nullptr, n);
 };
 
 template<>
-void gsacak_templated<char> (char *s, uint64_t *SA, uint64_t n, uint64_t k)
+void gsacak_templated<char> (char *s, long_type *SA, long_type n, long_type k)
 {
     gsacak((unsigned char*) s, SA, nullptr, nullptr, n);
 };
 
 template<>
-void gsacak_templated<uint32_t> (uint32_t *s, uint64_t *SA, uint64_t n, uint64_t k)
+void gsacak_templated<uint32_t> (uint32_t *s, long_type *SA, long_type n, long_type k)
 {
     gsacak_int(s, SA, nullptr, nullptr, n, k);
 };
