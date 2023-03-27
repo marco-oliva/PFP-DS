@@ -57,6 +57,7 @@ void read_fasta_file(const char *filename, std::vector<char_type>& v){
 
 //------------------------------------------------------------------------------
 
+
 #include <pfp/pfp.hpp>
 #include <pfp/ra_support.hpp>
 #include <pfp/sa_support.hpp>
@@ -66,7 +67,7 @@ TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
     std::vector<uint8_t> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
-    
+
     std::less<uint8_t> lex_comp;
     pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10, lex_comp);
     pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
@@ -101,10 +102,29 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 {
     std::size_t w = 10;
-    
+
     std::less<char> char_comp;
     pfpds::pf_parsing<char> pfp(testfiles_dir + "/yeast.fasta", w, char_comp);
     pfpds::pfp_sa_support<char> sa_support(pfp);
+    
+    // Check dats structures
+    std::vector<std::size_t> da_d, sa_d;
+    std::vector<int64_t> lcp_d;
+    sa_d.resize(pfp.dict.d.size());
+    lcp_d.resize(pfp.dict.d.size());
+    da_d.resize(pfp.dict.d.size());
+    gsacak((unsigned char*) &(pfp.dict.d[0]), &sa_d[0], &lcp_d[0], &da_d[0], pfp.dict.d.size());
+    
+    bool all_good = true;
+    
+    for (std::size_t i = 0; i < sa_d.size(); i++) { all_good = all_good and (pfp.dict.saD[i] == sa_d[i]); }
+    REQUIRE(all_good);
+    
+    for (std::size_t i = 0; i < da_d.size(); i++) { all_good = all_good and (pfp.dict.daD[i] == da_d[i]); }
+    REQUIRE(all_good);
+    
+    for (std::size_t i = 0; i < lcp_d.size(); i++) { all_good = all_good and (pfp.dict.lcpD[i] == lcp_d[i]); }
+    REQUIRE(all_good);
 
     // TEST sa_ds
     std::vector<char> yeast;
@@ -118,11 +138,15 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     sdsl::csa_wt<> csa;
     sdsl::construct_im(csa, static_cast<const char *>(&yeast[0]), num_bytes);
 
-    bool all_good = true;
+    all_good = true;
     for (std::size_t i = 0; i < yeast.size(); ++i)
     {
         all_good = all_good and (sa_support(i) == ((csa[i] + (yeast.size()) - w + 1) % (yeast.size())));
-        if (not all_good) { break; }
+        if (not all_good)
+        {
+            std::size_t sa_v = sa_support(i);
+            break;
+        }
     }
 
     REQUIRE(all_good);
@@ -131,7 +155,7 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 {
     std::size_t w = 5;
-    
+
     std::less<uint32_t> int_comp;
     pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
     pfpds::pfp_sa_support<uint32_t> sa_support(pfp);
@@ -224,10 +248,10 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     parse.push_back(0);
     std::less<uint8_t> lex_comp;
     pfpds::pf_parsing<uint8_t> pfp(dict2, lex_comp, parse, frequencies, w, 0, true, true);
-    
+
     std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
     REQUIRE(pfp.dict.colex_id == colex_id);
-    
+
     REQUIRE(pfp.bwt_P_ilist_built);
     for (std::size_t b_it = 0; b_it < pfp.w_wt.size(); b_it++)
     {

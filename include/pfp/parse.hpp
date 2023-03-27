@@ -20,9 +20,9 @@ namespace pfpds
 class parse{
 public:
     std::vector<uint32_t> p;
-    std::vector<uint_t> saP;
-    std::vector<uint_t> isaP;
-    std::vector<int_t> lcpP;
+    std::vector<std::size_t> saP;
+    std::vector<std::size_t> isaP;
+    std::vector<std::size_t> lcpP;
     sdsl::rmq_succinct_sct<> rmq_lcp_P;
     // sdsl::bit_vector b_p; // Starting position of each phrase in D
     // sdsl::bit_vector::rank_1_type rank_b_p;
@@ -39,7 +39,8 @@ public:
     // Default constructor for load
     parse() {}
     
-    parse(  std::vector<uint32_t>& p_,
+    parse(
+    std::vector<uint32_t>& p_,
     size_t alphabet_size_,
     bool saP_flag_ = true,
     bool isaP_flag_ = false,
@@ -52,7 +53,8 @@ public:
         build(saP_flag_, isaP_flag_, lcpP_flag_, rmq_lcp_P_flag_);
     }
     
-    parse(  std::string filename,
+    parse(
+    std::string filename,
     size_t alphabet_size_,
     bool saP_flag_ = true,
     bool isaP_flag_ = false,
@@ -60,7 +62,7 @@ public:
     bool rmq_lcp_P_flag_ = false ):
     alphabet_size(alphabet_size_)
     {
-        // Building dictionary from file
+        // Building parse from file
         std::string tmp_filename = filename + std::string(".parse");
         read_file(tmp_filename.c_str(), p);
         p.push_back(0); // this is the terminator for the sacak algorithm
@@ -68,63 +70,42 @@ public:
         build(saP_flag_, isaP_flag_, lcpP_flag_, rmq_lcp_P_flag_);
     }
     
-    void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_){
-        
-        if ((p.size() > (0x7FFFFFFF - 2)) and (sizeof(uint_t) == 4))
+    void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_)
+    {
+        // SA
+        if(saP_flag_)
         {
-            spdlog::error("Parse exceeds size allowed for 32 bits. Please use 64 bits executable.");
-            std::exit(1);
-        }
-        else
-        {
-            if (sizeof(uint_t) == 4) { spdlog::info("Using 32 bits uint_t"); }
-            else { spdlog::info("Using 64 bits uint_t"); }
-        }
-        
-        
-        // TODO: check if it has been already computed
-        if(saP_flag_){
             saP.resize(p.size());
-            // suffix array of the parsing.
-            spdlog::info("Computing SA of the parsing");
-            _elapsed_time(
-            sacak_int(&p[0],&saP[0],p.size(),alphabet_size);
-            );
+            spdlog::info("Using 8 bytes for SA");
+            sacak_int(&p[0], &saP[0], p.size(), alphabet_size);
+            saP_flag = true;
         }
         
-        assert(!isaP_flag_ || (saP_flag || saP_flag_) );
-        if(isaP_flag_ && !isaP_flag){
-            // inverse suffix array of the parsing.
+        // ISA
+        if(isaP_flag_)
+        {
+            assert(saP_flag);
             spdlog::info("Computing ISA of the parsing");
-            _elapsed_time(
-            {
             isaP.resize(p.size());
-            for(int i = 0; i < saP.size(); ++i){
-                isaP[saP[i]] = i;
-            }
-            }
-            );
-            
+            for (std::size_t i = 0; i < saP.size(); i++) { isaP[saP[i]] = i; }
+            isaP_flag = true;
         }
-        
-        if(lcpP_flag_){
-            lcpP.resize(p.size());
-            // LCP array of the parsing.
+    
+        // LCP
+        if(lcpP_flag_)
+        {
             spdlog::info("Computing LCP of the parsing");
-            _elapsed_time(
+            lcpP.resize(p.size());
             LCP_array(&p[0], isaP, saP, p.size(), lcpP);
-            );
         }
         
-        
+        // RMQ over LCP
         assert(!rmq_lcp_P_flag_ || (lcpP_flag || lcpP_flag_));
-        if(rmq_lcp_P_flag_ && ! rmq_lcp_P_flag){
-            rmq_lcp_P_flag = true;
+        if(rmq_lcp_P_flag_)
+        {
             spdlog::info("Computing RMQ over LCP of the parsing");
-            // Compute the LCP rank of P
-            _elapsed_time(
             rmq_lcp_P = sdsl::rmq_succinct_sct<>(&lcpP);
-            );
+            rmq_lcp_P_flag = true;
         }
         
     }
