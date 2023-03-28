@@ -180,7 +180,7 @@ TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
     REQUIRE(all_good);
 }
 
-TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
+TEST_CASE( "pfp<uint8_t> from example", "[small]" )
 {
     pfpds::long_type w = 2;
 

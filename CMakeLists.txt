@@ -149,7 +149,7 @@ if (BUILD_TESTS OR ${CMAKE_BUILD_TYPE} MATCHES "Debug")
     target_link_libraries(unit_tests Catch2::Catch2 sdsl gsacak64 divsufsort divsufsort64)
 
     enable_testing()
-    add_test(NAME unit_tests COMMAND unit_tests)
+    add_test(NAME unit_tests COMMAND unit_tests [small])
 
 endif()
 
