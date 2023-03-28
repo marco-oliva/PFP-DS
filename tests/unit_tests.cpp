@@ -250,7 +250,9 @@ TEST_CASE( "pfp<uint8_t> from example", "PFP on example" )
     pfpds::pf_parsing<uint8_t> pfp(dict2, lex_comp, parse, frequencies, w, 0, true, true);
 
     std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
-    REQUIRE(pfp.dict.colex_id == colex_id);
+    bool all_good = true;
+    for (pfpds::long_type i = 0; i < pfp.dict.colex_id.size(); i++) { all_good = all_good and (pfp.dict.colex_id[i] == colex_id[i]); }
+    REQUIRE(all_good);
 
     REQUIRE(pfp.bwt_P_ilist_built);
     for (pfpds::long_type b_it = 0; b_it < pfp.w_wt.size(); b_it++)

@@ -53,8 +53,8 @@ public:
     sdsl::int_vector<0> colex_daD;
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
-    std::vector<long_type> colex_id;
-    std::vector<long_type> inv_colex_id;
+    sdsl::int_vector<0> colex_id;
+    sdsl::int_vector<0> inv_colex_id;
     long_type alphabet_size = 0;
     
     bool saD_flag = false;
@@ -234,25 +234,39 @@ public:
         if(colex_daD_flag_ or colex_id_flag_)
         {
             assert(daD_flag);
-            long_type bytes_colex_daD = 0;
-            long_type ps = n_phrases(); assert(ps != 0);
-            while (ps != 0) { ps >>= 8; bytes_colex_daD++; }
-            spdlog::info("Using {} bytes for colex DA of the dictionary", bytes_colex_daD);
-            colex_daD = sdsl::int_vector<>(d.size(), 0, bytes_colex_daD * 8);
+            
+            // allocating space for colex DA
+            if (colex_daD_flag_)
+            {
+                long_type bytes_colex_daD = 0;
+                long_type ps = n_phrases(); assert(ps != 0);
+                while (ps != 0) { ps >>= 8; bytes_colex_daD++; }
+                spdlog::info("Using {} bytes for colex DA of the dictionary", bytes_colex_daD);
+                colex_daD = sdsl::int_vector<>(d.size(), 0, bytes_colex_daD * 8);
+            }
+            
+            // allocating space for colex_id and inv_colex_id
+            if (colex_daD_flag_ or colex_id_flag_)
+            {
+                long_type bytes_inv_colex_id = 0;
+                long_type ps = n_phrases(); assert(ps != 0);
+                while (ps != 0) { ps >>= 8; bytes_inv_colex_id++; }
+                spdlog::info("Using {} bytes for colex id and inverse colex id array of the dictionary", bytes_inv_colex_id);
+                colex_id = sdsl::int_vector<>(n_phrases(), 0, bytes_inv_colex_id * 8);
+                inv_colex_id = sdsl::int_vector<>(n_phrases(), 0, bytes_inv_colex_id * 8);
+            }
             
             compute_colex_da(colex_id_flag_, colex_daD_flag_);
             rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
             rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
             
-            colex_daD_flag = true;
-            colex_id_flag = true;
+            if (colex_daD_flag_) { colex_daD_flag = true; }
+            if (colex_id_flag_) { colex_id_flag = true; }
         }
     }
     
     void compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_)
     {
-        colex_id.resize(n_phrases());
-        inv_colex_id.resize(n_phrases());
 
         // ---------- just sort the reversed phrases
         std::vector<std::pair<std::vector<data_type>,uint32_t>> rev_dict(n_phrases());
@@ -298,7 +312,7 @@ public:
         
         for (i = 0; i < colex_daD.size(); ++i)
         {
-            colex_daD[i] = inv_colex_id.at(daD[i] % inv_colex_id.size());
+            colex_daD[i] = inv_colex_id[daD[i] % inv_colex_id.size()];
         }
     }
     
@@ -378,10 +392,6 @@ public:
 template <>
 void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_){
 
-    spdlog::info("Building colex id array of D");
-    colex_id.resize(n_phrases());
-    inv_colex_id.resize(n_phrases());
-
     for (long_type i = 0, j = 0; i < d.size(); ++i)
         if (d[i + 1] == EndOfWord)
         {
@@ -441,17 +451,13 @@ void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_f
     }
 
     // computing inverse colex id
-    for (long_type  i = 0; i < colex_id.size(); ++i)
-    {
-        inv_colex_id[colex_id[i]] = i;
-    }
+    for (long_type  i = 0; i < colex_id.size(); ++i) { inv_colex_id[colex_id[i]] = i; }
 
     if (colex_daD_flag_)
     {
-        colex_daD.resize(d.size());
         for (long_type  i = 0; i < colex_daD.size(); ++i)
         {
-            colex_daD[i] = inv_colex_id[daD[i]];
+            colex_daD[i] = inv_colex_id[daD[i] % inv_colex_id.size()];
         }
     }
 

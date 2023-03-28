@@ -74,7 +74,7 @@ public:
         if(saP_flag_)
         {
             saP.resize(p.size());
-            spdlog::info("Using 8 bytes for SA");
+            spdlog::info("Using 8 bytes for SA of the parse");
             sacak_int(&p[0], &saP[0], p.size(), alphabet_size);
             saP_flag = true;
         }
