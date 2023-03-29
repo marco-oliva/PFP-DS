@@ -14,7 +14,6 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch_all.hpp>
 
-
 //------------------------------------------------------------------------------
 
 struct listener : Catch::EventListenerBase
@@ -125,7 +124,7 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     
     for (pfpds::long_type i = 0; i < lcp_d.size(); i++) { all_good = all_good and (pfp.dict.lcpD[i] == lcp_d[i]); }
     REQUIRE(all_good);
-
+    
     // TEST sa_ds
     std::vector<char> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);

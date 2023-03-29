@@ -73,37 +73,45 @@ public:
         // SA
         if(saP_flag_)
         {
+            _elapsed_time(
             saP.resize(p.size());
             spdlog::info("Using 8 bytes for SA of the parse");
             sacak_int(&p[0], &saP[0], p.size(), alphabet_size);
             saP_flag = true;
+            );
         }
         
         // ISA
         if(isaP_flag_)
         {
+            _elapsed_time(
             assert(saP_flag);
             spdlog::info("Computing ISA of the parsing");
             isaP.resize(p.size());
             for (long_type i = 0; i < saP.size(); i++) { isaP[saP[i]] = i; }
             isaP_flag = true;
+            );
         }
     
         // LCP
         if(lcpP_flag_)
         {
+            _elapsed_time(
             spdlog::info("Computing LCP of the parsing");
             lcpP.resize(p.size());
             LCP_array(&p[0], isaP, saP, p.size(), lcpP);
+            );
         }
         
         // RMQ over LCP
         assert(!rmq_lcp_P_flag_ || (lcpP_flag || lcpP_flag_));
         if(rmq_lcp_P_flag_)
         {
+            _elapsed_time(
             spdlog::info("Computing RMQ over LCP of the parsing");
             rmq_lcp_P = sdsl::rmq_succinct_sct<>(&lcpP);
             rmq_lcp_P_flag = true;
+            );
         }
         
     }

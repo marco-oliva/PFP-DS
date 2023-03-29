@@ -154,15 +154,18 @@ public:
         // SA
         if(saD_flag_)
         {
+            _elapsed_time(
             spdlog::info("Using 8 bytes for SA of the dictionary");
             saD.resize(d.size());
             gsacak_templated<data_type>(&d[0], &saD[0], d.size(), alphabet_size);
             saD_flag = true;
+            );
         }
     
         // DA
         if(daD_flag_)
         {
+            _elapsed_time(
             assert(saD_flag);
             long_type bytes_daD = 0;
             long_type ps = n_phrases(); assert(ps != 0);
@@ -176,11 +179,13 @@ public:
                 daD[i] = out - 1;
             }
             daD_flag = true;
+            );
         }
         
         // ISA
         if (isaD_flag_)
         {
+            _elapsed_time(
             assert(saD_flag);
             long_type bytes_isaD = 0;
             long_type max_sa = d.size() + 1;
@@ -189,11 +194,13 @@ public:
             isaD = sdsl::int_vector<>(d.size(), 0, bytes_isaD * 8);
             for (long_type i = 0; i < saD.size(); i++) { isaD[saD[i]] = i; }
             isaD_flag = true;
+            );
         }
         
         // LCP
         if (lcpD_flag_)
         {
+            _elapsed_time(
             assert(saD_flag and isaD_flag);
             long_type bytes_lcpD = 0;
             long_type mpl = max_phrase_length;
@@ -219,20 +226,24 @@ public:
                 }
             }
             lcpD_flag = true;
+            );
         }
         
         // RMQ over LCP
         if(rmq_lcp_D_flag_)
         {
+            _elapsed_time(
             assert(lcpD_flag);
             spdlog::info("Computing RMQ over LCP of dictionary");
             rmq_lcp_D = sdsl::rmq_succinct_sct<>(&lcpD);
             rmq_lcp_D_flag = true;
+            );
         }
     
         // co-lex document array of the dictionary.
         if(colex_daD_flag_ or colex_id_flag_)
         {
+            _elapsed_time(
             assert(daD_flag);
             
             // allocating space for colex DA
@@ -257,11 +268,16 @@ public:
             }
             
             compute_colex_da(colex_id_flag_, colex_daD_flag_);
-            rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
-            rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
+            
+            if (colex_daD_flag_)
+            {
+                rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
+                rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
+            }
             
             if (colex_daD_flag_) { colex_daD_flag = true; }
             if (colex_id_flag_) { colex_id_flag = true; }
+            );
         }
     }
     
@@ -393,12 +409,14 @@ template <>
 void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_){
 
     for (long_type i = 0, j = 0; i < d.size(); ++i)
+    {
         if (d[i + 1] == EndOfWord)
         {
             colex_id[j] = j;
             inv_colex_id[j++] = i;
         }
-
+    }
+    
     // buckets stores the start and the end of each bucket.
     std::queue<std::pair<long_type,long_type>> buckets;
     // the first bucket is the whole array.

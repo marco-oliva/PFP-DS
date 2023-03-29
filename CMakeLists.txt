@@ -133,7 +133,6 @@ if(NOT gsacak_POPULATED)
     target_compile_options(gsacak64 PUBLIC -DM64)
 endif()
 
-
 ################################################################################
 # PFP-DS
 
