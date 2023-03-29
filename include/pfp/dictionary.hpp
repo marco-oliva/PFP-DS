@@ -405,81 +405,81 @@ public:
 };
 
 
-template <>
-void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_){
-
-    for (long_type i = 0, j = 0; i < d.size(); ++i)
-    {
-        if (d[i + 1] == EndOfWord)
-        {
-            colex_id[j] = j;
-            inv_colex_id[j++] = i;
-        }
-    }
-    
-    // buckets stores the start and the end of each bucket.
-    std::queue<std::pair<long_type,long_type>> buckets;
-    // the first bucket is the whole array.
-    buckets.push({0,colex_id.size()});
-
-    // for each bucket
-    while(not buckets.empty())
-    {
-        auto bucket = buckets.front(); buckets.pop();
-        long_type start = bucket.first;
-        long_type  end = bucket.second;
-        if ((start < end) && (end - start > 1))
-        {
-            std::vector<uint32_t> count(256, 0);
-            for (long_type i = start; i < end; ++i)
-            {
-                count[d[inv_colex_id[i]]]++;
-            }
-
-            std::vector<uint32_t> psum(256, 0);
-            for (long_type i = 1; i < 256; ++i)
-            {
-                psum[i] = psum[i - 1] + count[i - 1];
-            }
-
-            std::vector<long_type > tmp(end - start, 0);
-            std::vector<long_type > tmp_id(end - start, 0);
-            for (long_type i = start; i < end; ++i)
-            {
-                long_type index = psum[d[inv_colex_id[i]]]++;
-                tmp[index] = std::min(inv_colex_id[i] - 1, (long_type) d.size() - 1);
-                tmp_id[index] = colex_id[i];
-            }
-
-            // Recursion
-            long_type tmp_start = 0;
-            for (long_type  i = 0; i < 256; ++i)
-            {
-                for (long_type  j = 0; j < count[i]; ++j)
-                {
-                    inv_colex_id[start + j] = tmp[tmp_start];
-                    colex_id[start + j] = tmp_id[tmp_start++];
-                }
-                end = start + count[i];
-                if (i > EndOfWord) { buckets.push({start, end}); }
-                start = end;
-            }
-        }
-
-    }
-
-    // computing inverse colex id
-    for (long_type  i = 0; i < colex_id.size(); ++i) { inv_colex_id[colex_id[i]] = i; }
-
-    if (colex_daD_flag_)
-    {
-        for (long_type  i = 0; i < colex_daD.size(); ++i)
-        {
-            colex_daD[i] = inv_colex_id[daD[i] % inv_colex_id.size()];
-        }
-    }
-
-}
+//template <>
+//void dictionary<uint8_t>::compute_colex_da(bool colex_id_flag_, bool colex_daD_flag_){
+//
+//    for (long_type i = 0, j = 0; i < d.size(); ++i)
+//    {
+//        if (d[i + 1] == EndOfWord)
+//        {
+//            colex_id[j] = j;
+//            inv_colex_id[j++] = i;
+//        }
+//    }
+//
+//    // buckets stores the start and the end of each bucket.
+//    std::queue<std::pair<long_type,long_type>> buckets;
+//    // the first bucket is the whole array.
+//    buckets.push({0,colex_id.size()});
+//
+//    // for each bucket
+//    while(not buckets.empty())
+//    {
+//        auto bucket = buckets.front(); buckets.pop();
+//        long_type start = bucket.first;
+//        long_type  end = bucket.second;
+//        if ((start < end) && (end - start > 1))
+//        {
+//            std::vector<uint32_t> count(256, 0);
+//            for (long_type i = start; i < end; ++i)
+//            {
+//                count[d[inv_colex_id[i]]]++;
+//            }
+//
+//            std::vector<uint32_t> psum(256, 0);
+//            for (long_type i = 1; i < 256; ++i)
+//            {
+//                psum[i] = psum[i - 1] + count[i - 1];
+//            }
+//
+//            std::vector<long_type > tmp(end - start, 0);
+//            std::vector<long_type > tmp_id(end - start, 0);
+//            for (long_type i = start; i < end; ++i)
+//            {
+//                long_type index = psum[d[inv_colex_id[i]]]++;
+//                tmp[index] = std::min(inv_colex_id[i] - 1, (long_type) d.size() - 1);
+//                tmp_id[index] = colex_id[i];
+//            }
+//
+//            // Recursion
+//            long_type tmp_start = 0;
+//            for (long_type  i = 0; i < 256; ++i)
+//            {
+//                for (long_type  j = 0; j < count[i]; ++j)
+//                {
+//                    inv_colex_id[start + j] = tmp[tmp_start];
+//                    colex_id[start + j] = tmp_id[tmp_start++];
+//                }
+//                end = start + count[i];
+//                if (i > EndOfWord) { buckets.push({start, end}); }
+//                start = end;
+//            }
+//        }
+//
+//    }
+//
+//    // computing inverse colex id
+//    for (long_type  i = 0; i < colex_id.size(); ++i) { inv_colex_id[colex_id[i]] = i; }
+//
+//    if (colex_daD_flag_)
+//    {
+//        for (long_type  i = 0; i < colex_daD.size(); ++i)
+//        {
+//            colex_daD[i] = inv_colex_id[daD[i] % inv_colex_id.size()];
+//        }
+//    }
+//
+//}
 
 }
 
