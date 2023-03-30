@@ -46,11 +46,12 @@ public:
         long_type right;
     };
     
+    long_type n; // Size of the text
+    long_type w; // Size of the window
+    
     dictionary<dict_data_type, colex_comparator_type> dict;
     parse pars;
     std::vector<long_type> freq;
-    long_type n; // Size of the text
-    long_type w; // Size of the window
     
     sdsl::bit_vector b_bwt;
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
@@ -293,7 +294,8 @@ public:
         }
     }
     
-    void clear_unnecessary_elements(){
+    void clear_unnecessary_elements()
+    {
         // dict.daD.resize(0);
         // dict.colex_daD.clear();
         // dict.colex_id.clear();

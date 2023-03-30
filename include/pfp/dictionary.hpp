@@ -41,8 +41,21 @@ class dictionary
 {
 
 public:
+    
+    bool saD_flag = false;
+    bool isaD_flag = false;
+    bool daD_flag = false;
+    bool lcpD_flag = false;
+    bool rmq_lcp_D_flag = false;
+    bool colex_id_flag = false;
+    bool colex_daD_flag = false;
+    
+    long_type w;
+    
+    colex_comparator_type& colex_comparator;
+    
     std::vector<data_type> d;
-    std::vector<long_type> saD;
+    sdsl::int_vector<0> saD;
     sdsl::int_vector<0> isaD;
     sdsl::int_vector<0> daD;
     sdsl::int_vector<0> lcpD;
@@ -56,18 +69,6 @@ public:
     sdsl::int_vector<0> colex_id;
     sdsl::int_vector<0> inv_colex_id;
     long_type alphabet_size = 0;
-    
-    bool saD_flag = false;
-    bool isaD_flag = false;
-    bool daD_flag = false;
-    bool lcpD_flag = false;
-    bool rmq_lcp_D_flag = false;
-    bool colex_id_flag = false;
-    bool colex_daD_flag = false;
-    
-    long_type w;
-    
-    colex_comparator_type& colex_comparator;
     
     // default constructor for load.
     dictionary() {}
@@ -111,19 +112,18 @@ public:
         while(i < d.size() && d[i++] == Dollar)
             ++n_dollars;
         std::vector<data_type> dollars(w-n_dollars,Dollar);
-        d.insert(d.begin(), dollars.begin(),dollars.end());
+        d.insert(d.begin(), dollars.begin(), dollars.end());
         
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
     }
     
-    inline long_type length_of_phrase(long_type id) {
+    inline long_type length_of_phrase(long_type id)
+    {
         assert(id > 0);
         return select_b_d(id+1)-select_b_d(id) - 1; // to remove the EndOfWord
     }
     
-    inline long_type n_phrases(){
-        return rank_b_d(d.size()-1);
-    }
+    inline long_type n_phrases() { return rank_b_d(d.size()-1); }
     
     void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_, bool colex_id_flag_, bool colex_daD_flag_){
       
@@ -131,7 +131,7 @@ public:
         alphabet_size = (*std::max_element(d.begin(), d.end())) + 1;
         
         // Building the bitvector with a 1 in each starting position of each phrase in D
-        // Also compute length of longhest phrase
+        // Also compute length of the longest phrase
         b_d.resize(d.size());
         long_type max_phrase_length = 0;
         for(long_type i = 0; i < b_d.size(); ++i) { b_d[i] = false; } // bug in resize
@@ -155,9 +155,17 @@ public:
         if(saD_flag_)
         {
             _elapsed_time(
-            spdlog::info("Using 8 bytes for SA of the dictionary");
-            saD.resize(d.size());
-            gsacak_templated<data_type>(&d[0], &saD[0], d.size(), alphabet_size);
+            spdlog::info("Using 8 bytes for computing SA of the dictionary");
+            std::vector<long_type> tmp_saD(d.size(), 0);
+            gsacak_templated<data_type>(&d[0], &tmp_saD[0], d.size(), alphabet_size);
+            
+            long_type bytes_saD = 0;
+            long_type max_sa = d.size() + 1;
+            while (max_sa != 0) { max_sa >>= 8; bytes_saD++; }
+            spdlog::info("Using {} bytes for storing SA of the dictionary", bytes_saD);
+            saD = sdsl::int_vector<>(tmp_saD.size(), 0, bytes_saD * 8);
+            for (long_type i = 0; i < tmp_saD.size(); i++) { saD[i] = tmp_saD[i]; }
+            
             saD_flag = true;
             );
         }
@@ -292,12 +300,10 @@ public:
         {
             while((i < d.size()-1) and (d[i] != EndOfWord)) { rev_dict[rank].first.emplace_back(d[i++]); }
             i++;
-            reverse(rev_dict[rank].first.begin(), rev_dict[rank].first.end());
+            std::reverse(rev_dict[rank].first.begin(), rev_dict[rank].first.end());
             rev_dict[rank].second = rank;
             rank++;
         }
-        
-        std::vector<std::pair<std::vector<data_type>,uint32_t>> rev_dict_2(rev_dict);
         
         std::sort(rev_dict.begin(),rev_dict.end(),
                   [this] (std::pair<std::vector<data_type>,uint32_t>& l, std::pair<std::vector<data_type>,uint32_t>& r)
