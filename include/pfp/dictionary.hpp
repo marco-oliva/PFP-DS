@@ -59,11 +59,12 @@ public:
     sdsl::bit_vector::rank_1_type rank_b_d;
     sdsl::bit_vector::select_1_type select_b_d;
 
-
-    // std::vector<long_type> saD;
-    sdsl::int_vector<0> saD;
-
-    sdsl::int_vector<0> isaD;
+    // fixed size
+    static constexpr std::size_t sa_size_bits = 40;
+    sdsl::int_vector<sa_size_bits> saD;
+    sdsl::int_vector<sa_size_bits> isaD;
+    
+    // size depends on input
     sdsl::int_vector<0> daD;
     sdsl::int_vector<0> lcpD;
     sdsl::rmq_succinct_sct<> rmq_lcp_D;
@@ -162,11 +163,8 @@ public:
             std::vector<long_type> tmp_saD(d.size(), 0);
             gsacak_templated<data_type>(&d[0], &tmp_saD[0], d.size(), alphabet_size);
             
-            long_type bytes_saD = 0;
-            long_type max_sa = d.size() + 1;
-            while (max_sa != 0) { max_sa >>= 8; bytes_saD++; }
-            spdlog::info("Using {} bytes for storing SA of the dictionary", bytes_saD);
-            saD = sdsl::int_vector<>(tmp_saD.size(), 0ULL, bytes_saD * 8);
+            spdlog::info("Using {} bytes for storing SA of the dictionary", sa_size_bits / 8);
+            saD.resize(tmp_saD.size());
 
             for (long_type i = 0; i < tmp_saD.size(); i++) { saD[i] = tmp_saD[i]; }
             );
@@ -198,11 +196,8 @@ public:
         {
             _elapsed_time(
             assert(saD_flag);
-            long_type bytes_isaD = 0;
-            long_type max_sa = d.size() + 1;
-            while (max_sa != 0) { max_sa >>= 8; bytes_isaD++; }
-            spdlog::info("Using {} bytes for ISA of the dictionary", bytes_isaD);
-            isaD = sdsl::int_vector<>(d.size(), 0ULL, bytes_isaD * 8);
+            spdlog::info("Using {} bytes for ISA of the dictionary", sa_size_bits / 8);
+            isaD.resize(saD.size());
             for (long_type i = 0; i < saD.size(); i++) { isaD[saD[i]] = i; }
             );
             isaD_flag = true;

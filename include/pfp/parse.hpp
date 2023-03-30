@@ -20,10 +20,12 @@ namespace pfpds
 class parse{
 public:
     std::vector<uint32_t> p;
-
-    sdsl::int_vector<> saP;
-    sdsl::int_vector<> isaP;
-    sdsl::int_vector<> lcpP;
+    
+    // fixed size
+    static constexpr std::size_t sa_size_bits = 40;
+    sdsl::int_vector<sa_size_bits> saP;
+    sdsl::int_vector<sa_size_bits> isaP;
+    sdsl::int_vector<sa_size_bits> lcpP;
 
     sdsl::rmq_succinct_sct<> rmq_lcp_P;
     // sdsl::bit_vector b_p; // Starting position of each phrase in D
@@ -79,12 +81,9 @@ public:
             spdlog::info("Using 8 bytes for computing SA of the parsing");
             std::vector<long_type> tmp_saP(p.size(), 0);
             sacak_int(&p[0], &tmp_saP[0], p.size(), alphabet_size);
-
-            long_type bytes_saP = 0;
-            long_type max_sa = p.size() + 1;
-            while (max_sa != 0) { max_sa >>= 8; bytes_saP++; }
-            spdlog::info("Using {} bytes for storing SA of the parsing", bytes_saP);
-            saP = sdsl::int_vector<>(tmp_saP.size(), 0ULL, bytes_saP * 8);
+            
+            spdlog::info("Using {} bytes for storing SA of the parsing", sa_size_bits / 8);
+            saP.resize(tmp_saP.size());
 
             for (long_type i = 0; i < tmp_saP.size(); i++) { saP[i] = tmp_saP[i]; }
             );
@@ -97,11 +96,8 @@ public:
         {
             _elapsed_time(
             assert(saP_flag);
-            long_type bytes_isaP = 0;
-            long_type max_isa = p.size() + 1;
-            while (max_isa != 0) { max_isa >>= 8; bytes_isaP++; }
-            spdlog::info("Using {} bytes for ISA of the parsing", bytes_isaP);
-            isaP = sdsl::int_vector<>(p.size(), 0ULL, bytes_isaP * 8);
+            spdlog::info("Using {} bytes for ISA of the parsing", sa_size_bits / 8);
+            isaP.resize(saP.size());
             for (long_type i = 0; i < saP.size(); i++) { isaP[saP[i]] = i; }
             );
             isaP_flag = true;
@@ -112,11 +108,8 @@ public:
         {
             _elapsed_time(
             assert(saP_flag and isaP_flag);
-            long_type bytes_lcpP = 0;
-            long_type max_lcp = p.size() + 1;
-            while (max_lcp != 0) { max_lcp >>= 8; bytes_lcpP++; }
-            spdlog::info("Using {} bytes for LCP of the parsing", bytes_lcpP);
-            lcpP = sdsl::int_vector<>(p.size(), 0ULL, bytes_lcpP * 8);
+            spdlog::info("Using {} bytes for LCP of the parsing", sa_size_bits / 8);
+            lcpP.resize(saP.size());
 
             // Kasai et al. LCP construction algorithm
             lcpP[0]  = 0;
