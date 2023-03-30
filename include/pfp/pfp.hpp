@@ -93,21 +93,21 @@ public:
         compute_n();
         
         spdlog::info("Computing b_p");
-        _elapsed_time(compute_b_p());
+        compute_b_p();
         
         spdlog::info("Computing b_bwt and M of the parsing");
-        _elapsed_time(build_b_bwt_and_M());
+        build_b_bwt_and_M();
         
         if (build_W_flag)
         {
             spdlog::info("Computing W of BWT(P)");
-            _elapsed_time(build_W());
+            build_W();
         }
         
         if (build_bwt_P_ilist_flag)
         {
             spdlog::info("Computing inverted list of BWT(P)");
-            _elapsed_time(build_bwt_P_ilist());
+            build_bwt_P_ilist();
         }
 
         // Clear unnecessary elements
@@ -132,21 +132,21 @@ public:
         // b_p(pfp.n,0);
 
         spdlog::info("Computing b_p");
-        _elapsed_time(compute_b_p());
+        compute_b_p();
         
         spdlog::info("Computing b_bwt and M of the parsing");
-        _elapsed_time(build_b_bwt_and_M());
+        build_b_bwt_and_M();
         
         if (build_W_flag)
         {
             spdlog::info("Computing W of BWT(P)");
-            _elapsed_time(build_W());
+            build_W();
         }
         
         if (build_bwt_P_ilist_flag)
         {
             spdlog::info("Computing inverted list of BWT(P)");
-            _elapsed_time(build_bwt_P_ilist());
+            build_bwt_P_ilist();
         }
         
         
@@ -163,7 +163,7 @@ public:
         
         long_type i = 0;
         
-        for(int j = 0; j < pars.p.size()-2; ++j){ // -2 because the beginning of the last phrase is in position 0
+        for(long_type j = 0; j < pars.p.size()-2; ++j){ // -2 because the beginning of the last phrase is in position 0
             // p[i]: phrase_id
             assert(pars.p[j] != 0);
             // phrase_length: select_b_d(p[i]+1)-select_b_d(p[i]);
@@ -179,7 +179,7 @@ public:
     void compute_n(){
         // Compute the length of the string;
         n = 0;
-        for (int j = 0; j < pars.p.size() - 1; ++j)
+        for (long_type j = 0; j < pars.p.size() - 1; ++j)
         {
             // parse.p[j]: phrase_id
             assert(pars.p[j] != 0);
@@ -249,7 +249,7 @@ public:
                 m.left = dict.colex_daD[dict.rmq_colex_daD(left, right)];
                 m.right = dict.colex_daD[dict.rMq_colex_daD(left, right)];
                 
-                M.push_back(m);
+                M.emplace_back(m);
             }
         }
         

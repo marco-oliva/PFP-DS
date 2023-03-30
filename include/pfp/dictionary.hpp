@@ -55,19 +55,23 @@ public:
     colex_comparator_type& colex_comparator;
     
     std::vector<data_type> d;
+    sdsl::bit_vector b_d; // Starting position of each phrase in D
+    sdsl::bit_vector::rank_1_type rank_b_d;
+    sdsl::bit_vector::select_1_type select_b_d;
+
+
+    // std::vector<long_type> saD;
     sdsl::int_vector<0> saD;
+
     sdsl::int_vector<0> isaD;
     sdsl::int_vector<0> daD;
     sdsl::int_vector<0> lcpD;
     sdsl::rmq_succinct_sct<> rmq_lcp_D;
-    sdsl::bit_vector b_d; // Starting position of each phrase in D
-    sdsl::bit_vector::rank_1_type rank_b_d;
-    sdsl::bit_vector::select_1_type select_b_d;
+    sdsl::int_vector<0> colex_id;
+    sdsl::int_vector<0> inv_colex_id;
     sdsl::int_vector<0> colex_daD;
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
-    sdsl::int_vector<0> colex_id;
-    sdsl::int_vector<0> inv_colex_id;
     long_type alphabet_size = 0;
     
     // default constructor for load.
@@ -86,7 +90,6 @@ public:
                d(d_), w(w), colex_comparator(colex_comparator)
     {
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
-        //assert(d[0] == Dollar);
     }
     
     dictionary(std::string filename,
@@ -163,11 +166,11 @@ public:
             long_type max_sa = d.size() + 1;
             while (max_sa != 0) { max_sa >>= 8; bytes_saD++; }
             spdlog::info("Using {} bytes for storing SA of the dictionary", bytes_saD);
-            saD = sdsl::int_vector<>(tmp_saD.size(), 0, bytes_saD * 8);
+            saD = sdsl::int_vector<>(tmp_saD.size(), 0ULL, bytes_saD * 8);
+
             for (long_type i = 0; i < tmp_saD.size(); i++) { saD[i] = tmp_saD[i]; }
-            
-            saD_flag = true;
             );
+            saD_flag = true;
         }
     
         // DA
@@ -179,15 +182,15 @@ public:
             long_type ps = n_phrases(); assert(ps != 0);
             while (ps != 0) { ps >>= 8; bytes_daD++; }
             spdlog::info("Using {} bytes for DA of the dictionary", bytes_daD);
-            daD = sdsl::int_vector<>(d.size(), 0, bytes_daD * 8);
+            daD = sdsl::int_vector<>(d.size(), 0ULL, bytes_daD * 8);
             for (long_type i = 0; i < saD.size(); i++)
             {
                 long_type out = rank_b_d.rank(saD[i]);
                 if (b_d[saD[i]]) { out += 1; }
                 daD[i] = out - 1;
             }
-            daD_flag = true;
             );
+            daD_flag = true;
         }
         
         // ISA
@@ -199,10 +202,10 @@ public:
             long_type max_sa = d.size() + 1;
             while (max_sa != 0) { max_sa >>= 8; bytes_isaD++; }
             spdlog::info("Using {} bytes for ISA of the dictionary", bytes_isaD);
-            isaD = sdsl::int_vector<>(d.size(), 0, bytes_isaD * 8);
+            isaD = sdsl::int_vector<>(d.size(), 0ULL, bytes_isaD * 8);
             for (long_type i = 0; i < saD.size(); i++) { isaD[saD[i]] = i; }
-            isaD_flag = true;
             );
+            isaD_flag = true;
         }
         
         // LCP
@@ -214,7 +217,7 @@ public:
             long_type mpl = max_phrase_length;
             while (mpl != 0) { mpl >>= 8; bytes_lcpD++; }
             spdlog::info("Using {} bytes for LCP of the dictionary", bytes_lcpD);
-            lcpD = sdsl::int_vector<>(d.size(), 0, bytes_lcpD * 8);
+            lcpD = sdsl::int_vector<>(d.size(), 0ULL, bytes_lcpD * 8);
     
             // Kasai et al. LCP construction algorithm
             lcpD[0]  = 0;
@@ -233,8 +236,8 @@ public:
                     if(l>0) { l--; }
                 }
             }
-            lcpD_flag = true;
             );
+            lcpD_flag = true;
         }
         
         // RMQ over LCP
@@ -244,8 +247,8 @@ public:
             assert(lcpD_flag);
             spdlog::info("Computing RMQ over LCP of dictionary");
             rmq_lcp_D = sdsl::rmq_succinct_sct<>(&lcpD);
-            rmq_lcp_D_flag = true;
             );
+            rmq_lcp_D_flag = true;
         }
     
         // co-lex document array of the dictionary.
@@ -253,7 +256,6 @@ public:
         {
             _elapsed_time(
             assert(daD_flag);
-            
             // allocating space for colex DA
             if (colex_daD_flag_)
             {
@@ -261,7 +263,7 @@ public:
                 long_type ps = n_phrases(); assert(ps != 0);
                 while (ps != 0) { ps >>= 8; bytes_colex_daD++; }
                 spdlog::info("Using {} bytes for colex DA of the dictionary", bytes_colex_daD);
-                colex_daD = sdsl::int_vector<>(d.size(), 0, bytes_colex_daD * 8);
+                colex_daD = sdsl::int_vector<>(d.size(), 0ULL, bytes_colex_daD * 8);
             }
             
             // allocating space for colex_id and inv_colex_id
@@ -271,8 +273,8 @@ public:
                 long_type ps = n_phrases(); assert(ps != 0);
                 while (ps != 0) { ps >>= 8; bytes_inv_colex_id++; }
                 spdlog::info("Using {} bytes for colex id and inverse colex id array of the dictionary", bytes_inv_colex_id);
-                colex_id = sdsl::int_vector<>(n_phrases(), 0, bytes_inv_colex_id * 8);
-                inv_colex_id = sdsl::int_vector<>(n_phrases(), 0, bytes_inv_colex_id * 8);
+                colex_id = sdsl::int_vector<>(n_phrases(), 0ULL, bytes_inv_colex_id * 8);
+                inv_colex_id = sdsl::int_vector<>(n_phrases(), 0ULL, bytes_inv_colex_id * 8);
             }
             
             compute_colex_da(colex_id_flag_, colex_daD_flag_);
@@ -282,10 +284,10 @@ public:
                 rmq_colex_daD = sdsl::rmq_succinct_sct<>(&colex_daD);
                 rMq_colex_daD = sdsl::range_maximum_sct<>::type(&colex_daD);
             }
-            
+            );
+
             if (colex_daD_flag_) { colex_daD_flag = true; }
             if (colex_id_flag_) { colex_id_flag = true; }
-            );
         }
     }
     

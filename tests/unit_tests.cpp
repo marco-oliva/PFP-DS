@@ -98,44 +98,69 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
     REQUIRE(all_good);
 }
 
-TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
+TEST_CASE( "dictionary<uint8_t> DS for yeast", "D on yeast.fasta" )
 {
     pfpds::long_type w = 10;
-    
     std::less<uint8_t> lex_comp;
-    
-    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", w, lex_comp);
-    pfpds::pfp_sa_support<uint8_t> sa_support(pfp);
-    
+
+    pfpds::dictionary<uint8_t> dict(testfiles_dir + "/yeast.fasta", w, lex_comp);
+
     // Check data structures
     std::vector<pfpds::long_type> da_d, sa_d;
     std::vector<pfpds::long_signed_type> lcp_d;
-    sa_d.resize(pfp.dict.d.size());
-    lcp_d.resize(pfp.dict.d.size());
-    da_d.resize(pfp.dict.d.size());
-    gsacak(&(pfp.dict.d[0]), &sa_d[0], &lcp_d[0], &da_d[0], pfp.dict.d.size());
-    
+    sa_d.resize(dict.d.size());
+    lcp_d.resize(dict.d.size());
+    da_d.resize(dict.d.size());
+    gsacak(&(dict.d[0]), &sa_d[0], &lcp_d[0], &da_d[0], dict.d.size());
+
     bool all_good = true;
-    
-    std::vector<pfpds::long_type> errors_positions;
-    for (pfpds::long_type i = 0; i < sa_d.size(); i++)
-    {
-        all_good = all_good and (pfp.dict.saD[i] == sa_d[i]);
-        if (not all_good)
-        {
-            pfpds::long_type sav = pfp.dict.saD[i];
-            if (pfp.dict.saD[i] != sa_d[i]) { errors_positions.push_back(i); }
-        }
-    }
-    // REQUIRE(all_good);
+    for (pfpds::long_type i = 0; i < sa_d.size(); i++) { all_good = all_good and (dict.saD[i] == sa_d[i]); }
+    REQUIRE(all_good);
+
     all_good = true;
-    for (pfpds::long_type i = 0; i < da_d.size(); i++) { all_good = all_good and (pfp.dict.daD[i] == da_d[i]); }
+    for (pfpds::long_type i = 0; i < da_d.size(); i++) { all_good = all_good and (dict.daD[i] == da_d[i]); }
     REQUIRE(all_good);
-    
-    for (pfpds::long_type i = 0; i < lcp_d.size(); i++) { all_good = all_good and (pfp.dict.lcpD[i] == lcp_d[i]); }
+
+    all_good = true;
+    for (pfpds::long_type i = 0; i < lcp_d.size(); i++) { all_good = all_good and (dict.lcpD[i] == lcp_d[i]); }
     REQUIRE(all_good);
-    
-    // TEST sa_ds
+}
+
+TEST_CASE( "parse<uint8_t> DS for yeast", "P on yeast.fasta" )
+{
+    pfpds::long_type w = 10;
+    std::less<uint8_t> lex_comp;
+
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta", 2245 + 1, true, true, true, true);
+
+    // Check data structures
+    std::vector<pfpds::long_type> sa_p, isa_p;
+    std::vector<pfpds::long_signed_type> lcp_p;
+    sa_p.resize(parse.p.size());
+    isa_p.resize(parse.p.size());
+    lcp_p.resize(parse.p.size());
+    sacak_int(&(parse.p[0]), &sa_p[0], parse.p.size(), 2245 + 1);
+
+    for (pfpds::long_type i = 0; i < sa_p.size(); i++) { isa_p[sa_p[i]] = i; }
+    pfpds::LCP_array(&parse.p[0], isa_p, sa_p, parse.p.size(), lcp_p);
+
+    bool all_good = true;
+    for (pfpds::long_type i = 0; i < sa_p.size(); i++) { all_good = all_good and (parse.saP[i] == sa_p[i]); }
+    REQUIRE(all_good);
+
+    all_good = true;
+    for (pfpds::long_type i = 0; i < isa_p.size(); i++) { all_good = all_good and (parse.isaP[i] == isa_p[i]); }
+    REQUIRE(all_good);
+
+    all_good = true;
+    for (pfpds::long_type i = 0; i < lcp_p.size(); i++) { all_good = all_good and (parse.lcpP[i] == lcp_p[i]); }
+    REQUIRE(all_good);
+}
+
+TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
+{
+    pfpds::long_type w = 10;
+
     std::vector<uint8_t> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
     yeast.insert(yeast.begin(), w - 1, 3);
@@ -143,22 +168,24 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
     yeast.push_back(4);
     yeast.push_back(0);
 
-    uint8_t num_bytes = 1;
-    sdsl::csa_wt<> csa;
-    sdsl::construct_im(csa, &yeast[0], num_bytes);
+    std::vector<pfpds::long_type> yeast_sa(yeast.size(), 0);
+    sacak(&yeast[0], &yeast_sa[0], yeast.size());
 
-    all_good = true;
+    std::less<uint8_t> lex_comp;
+    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", w, lex_comp);
+    pfpds::pfp_sa_support<uint8_t> sa_support(pfp);
+
+    bool all_good = true;
     for (pfpds::long_type i = 0; i < yeast.size(); ++i)
     {
-        all_good = all_good and (sa_support(i) == ((csa[i] + (yeast.size()) - w + 1) % (yeast.size())));
+        all_good = all_good and (sa_support(i) == ((yeast_sa[i] + (yeast.size()) - w + 1) % (yeast.size())));
         if (not all_good)
         {
             pfpds::long_type sa_v = sa_support(i);
             break;
         }
     }
-
-    REQUIRE(all_good);
+     REQUIRE(all_good);
 }
 
 TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
