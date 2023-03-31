@@ -81,7 +81,8 @@ public:
     
     bool bwt_P_ilist_built = false;
     
-    pf_parsing(const dictionary<dict_data_type, colex_comparator_type>& d,
+    pf_parsing(
+    const dictionary<dict_data_type, colex_comparator_type>& d,
     const parse& p,
     bool build_W_flag = true,
     bool build_bwt_P_ilist_flag = false)

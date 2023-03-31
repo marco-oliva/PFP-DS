@@ -72,33 +72,36 @@ public:
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
     long_type alphabet_size = 0;
     
-    dictionary(std::vector<data_type>& d_,
-               long_type w,
-               colex_comparator_type& colex_comparator,
-               bool saD_flag_ = true,
-               bool isaD_flag_ = true,
-               bool daD_flag_ = true,
-               bool lcpD_flag_ = true,
-               bool rmq_lcp_D_flag_ = true,
-               bool colex_id_flag_ = true,
-               bool colex_daD_flag = true):
-               d(d_), w(w), colex_comparator(colex_comparator)
+    dictionary(
+    std::vector<data_type>& d_,
+    long_type w,
+    colex_comparator_type& colex_comparator,
+    bool saD_flag_ = true,
+    bool isaD_flag_ = true,
+    bool daD_flag_ = true,
+    bool lcpD_flag_ = true,
+    bool rmq_lcp_D_flag_ = true,
+    bool colex_id_flag_ = true,
+    bool colex_daD_flag = true):
+    d(d_), w(w), colex_comparator(colex_comparator)
     {
         assert(d.back() == 0);
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
     }
     
-    dictionary(std::string filename,
-               long_type w,
-               colex_comparator_type& colex_comparator,
-               bool saD_flag_ = true,
-               bool isaD_flag_ = true,
-               bool daD_flag_ = true,
-               bool lcpD_flag_ = true,
-               bool rmq_lcp_D_flag_ = true,
-               bool colex_id_flag_ = true,
-               bool colex_daD_flag = true):
-              w(w), colex_comparator(colex_comparator)
+    dictionary(
+    std::string filename,
+    long_type w,
+    colex_comparator_type& colex_comparator,
+    bool saD_flag_ = true,
+    bool isaD_flag_ = true,
+    bool daD_flag_ = true,
+    bool lcpD_flag_ = true,
+    bool rmq_lcp_D_flag_ = true,
+    bool colex_id_flag_ = true,
+    bool colex_daD_flag = true)
+    :
+    w(w), colex_comparator(colex_comparator)
     {
         // Building dictionary from file
         std::string tmp_filename = filename + std::string(".dict");
