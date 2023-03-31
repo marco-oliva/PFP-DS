@@ -52,19 +52,16 @@ public:
     
     long_type w;
     
-    colex_comparator_type& colex_comparator;
+    const colex_comparator_type& colex_comparator;
     
     std::vector<data_type> d;
     sdsl::bit_vector b_d; // Starting position of each phrase in D
     sdsl::bit_vector::rank_1_type rank_b_d;
     sdsl::bit_vector::select_1_type select_b_d;
-
-    // fixed size
-    static constexpr std::size_t sa_size_bits = 40;
-    sdsl::int_vector<sa_size_bits> saD;
-    sdsl::int_vector<sa_size_bits> isaD;
     
     // size depends on input
+    sdsl::int_vector<0> saD;
+    sdsl::int_vector<0> isaD;
     sdsl::int_vector<0> daD;
     sdsl::int_vector<0> lcpD;
     sdsl::rmq_succinct_sct<> rmq_lcp_D;
@@ -74,9 +71,6 @@ public:
     sdsl::rmq_succinct_sct<> rmq_colex_daD;
     sdsl::range_maximum_sct<>::type rMq_colex_daD;
     long_type alphabet_size = 0;
-    
-    // default constructor for load.
-    dictionary() {}
     
     dictionary(std::vector<data_type>& d_,
                long_type w,
@@ -90,6 +84,7 @@ public:
                bool colex_daD_flag = true):
                d(d_), w(w), colex_comparator(colex_comparator)
     {
+        assert(d.back() == 0);
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
     }
     
@@ -117,17 +112,18 @@ public:
             ++n_dollars;
         std::vector<data_type> dollars(w-n_dollars,Dollar);
         d.insert(d.begin(), dollars.begin(), dollars.end());
+        assert(d.back() == 0);
         
         build(saD_flag_, isaD_flag_, daD_flag_, lcpD_flag_, rmq_lcp_D_flag_, colex_id_flag_, colex_daD_flag);
     }
     
-    inline long_type length_of_phrase(long_type id)
+    long_type length_of_phrase(long_type id) const
     {
         assert(id > 0);
         return select_b_d(id+1)-select_b_d(id) - 1; // to remove the EndOfWord
     }
     
-    inline long_type n_phrases() { return rank_b_d(d.size()-1); }
+    long_type n_phrases() const { return rank_b_d(d.size()-1); }
     
     void build(bool saD_flag_, bool isaD_flag_, bool daD_flag_, bool lcpD_flag_, bool rmq_lcp_D_flag_, bool colex_id_flag_, bool colex_daD_flag_){
       
@@ -162,9 +158,12 @@ public:
             spdlog::info("Using 8 bytes for computing SA of the dictionary");
             std::vector<long_type> tmp_saD(d.size(), 0);
             gsacak_templated<data_type>(&d[0], &tmp_saD[0], d.size(), alphabet_size);
-            
-            spdlog::info("Using {} bytes for storing SA of the dictionary", sa_size_bits / 8);
-            saD.resize(tmp_saD.size());
+
+            long_type bytes_saD = 0;
+            long_type max_sa = d.size() + 1;
+            while (max_sa != 0) { max_sa >>= 8; bytes_saD++; }
+            spdlog::info("Using {} bytes for storing SA of the dictionary", bytes_saD);
+            saD = sdsl::int_vector<>(tmp_saD.size(), 0ULL, bytes_saD * 8);
 
             for (long_type i = 0; i < tmp_saD.size(); i++) { saD[i] = tmp_saD[i]; }
             );
@@ -196,8 +195,11 @@ public:
         {
             _elapsed_time(
             assert(saD_flag);
-            spdlog::info("Using {} bytes for ISA of the dictionary", sa_size_bits / 8);
-            isaD.resize(saD.size());
+            long_type bytes_isaD = 0;
+            long_type max_sa = d.size() + 1;
+            while (max_sa != 0) { max_sa >>= 8; bytes_isaD++; }
+            spdlog::info("Using {} bytes for ISA of the dictionary", bytes_isaD);
+            isaD = sdsl::int_vector<>(d.size(), 0ULL, bytes_isaD * 8);
             for (long_type i = 0; i < saD.size(); i++) { isaD[saD[i]] = i; }
             );
             isaD_flag = true;
@@ -333,77 +335,6 @@ public:
         {
             colex_daD[i] = inv_colex_id[daD[i] % inv_colex_id.size()];
         }
-    }
-    
-    // Serialize to a stream.
-    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
-    {
-        sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        long_type written_bytes = 0;
-        
-//        written_bytes += my_serialize(d, out, child, "dictionary");
-//        written_bytes += my_serialize(saD, out, child, "saD");
-//        written_bytes += my_serialize(isaD, out, child, "isaD");
-//        written_bytes += my_serialize(daD, out, child, "daD");
-//        written_bytes += my_serialize(lcpD, out, child, "lcpD");
-//        written_bytes += rmq_lcp_D.serialize(out, child, "rmq_lcp_D");
-//        written_bytes += b_d.serialize(out, child, "b_d");
-//        written_bytes += rank_b_d.serialize(out, child, "rank_b_d");
-//        written_bytes += select_b_d.serialize(out, child, "select_b_d");
-//        written_bytes += my_serialize(colex_daD, out, child, "colex_daD");
-//        written_bytes += rmq_colex_daD.serialize(out, child, "rmq_colex_daD");
-//        written_bytes += rMq_colex_daD.serialize(out, child, "rMq_colex_daD");
-//        written_bytes += my_serialize(colex_id, out, child, "colex_id");
-//        written_bytes += sdsl::write_member(alphabet_size, out, child, "alphabet_size");
-        // written_bytes += sdsl::serialize(d, out, child, "dictionary");
-        // written_bytes += sdsl::serialize(saD, out, child, "saD");
-        // written_bytes += sdsl::serialize(isaD, out, child, "isaD");
-        // written_bytes += sdsl::serialize(daD, out, child, "daD");
-        // written_bytes += sdsl::serialize(lcpD, out, child, "lcpD");
-        // written_bytes += rmq_lcp_D.serialize(out, child, "rmq_lcp_D");
-        // written_bytes += b_d.serialize(out, child, "b_d");
-        // written_bytes += rank_b_d.serialize(out, child, "rank_b_d");
-        // written_bytes += select_b_d.serialize(out, child, "select_b_d");
-        // written_bytes += sdsl::serialize(colex_daD, out, child, "colex_daD");
-        // written_bytes += rmq_colex_daD.serialize(out, child, "rmq_colex_daD");
-        // written_bytes += rMq_colex_daD.serialize(out, child, "rMq_colex_daD");
-        // written_bytes += sdsl::serialize(colex_id, out, child, "colex_id");
-        
-        sdsl::structure_tree::add_size(child, written_bytes);
-        return written_bytes;
-        
-    }
-    
-    //! Load from a stream.
-    void load(std::istream &in)
-    {
-//        my_load(d, in);
-//        my_load(saD, in);
-//        my_load(isaD, in);
-//        my_load(daD, in);
-//        my_load(lcpD, in);
-//        rmq_lcp_D.load(in);
-//        b_d.load(in);
-//        rank_b_d.load(in, &b_d);
-//        select_b_d.load(in, &b_d);
-//        my_load(colex_daD, in);
-//        rmq_colex_daD.load(in);
-//        rMq_colex_daD.load(in);
-//        my_load(colex_id, in);
-//        sdsl::read_member(alphabet_size, in);
-        // sdsl::load(d, in);
-        // sdsl::load(saD, in);
-        // sdsl::load(isaD, in);
-        // sdsl::load(daD, in);
-        // sdsl::load(lcpD, in);
-        // rmq_lcp_D.load(in);
-        // b_d.load(in);
-        // rank_b_d.load(in, &b_d);
-        // select_b_d.load(in, &b_d);
-        // sdsl::load(colex_daD, in);
-        // rmq_colex_daD.load(in);
-        // rMq_colex_daD.load(in);
-        // sdsl::load(colex_id, in);
     }
 };
 

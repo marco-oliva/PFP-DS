@@ -66,9 +66,12 @@ TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
     std::vector<uint8_t> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
-
+    
+    pfpds::long_type w = 10;
     std::less<uint8_t> lex_comp;
-    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", 10, lex_comp);
+    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", w, lex_comp);
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta", dictionary.n_phrases() + 1);
+    pfpds::pf_parsing<uint8_t> pfp(dictionary, parse);
     pfpds::pfp_ra_support<uint8_t> ra_support(pfp);
 
     bool all_good = true;
@@ -84,9 +87,12 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 {
     std::vector<uint32_t> yeast_parse;
     pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
-
+    
+    pfpds::long_type w = 5;
     std::less<uint32_t> int_comp;
-    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", 5, int_comp);
+    pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta.parse", dictionary.n_phrases() + 1);
+    pfpds::pf_parsing<uint32_t> pfp(dictionary, parse);
     pfpds::pfp_ra_support<uint32_t> ra_support(pfp);
 
     bool all_good = true;
@@ -170,9 +176,11 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 
     std::vector<pfpds::long_type> yeast_sa(yeast.size(), 0);
     sacak(&yeast[0], &yeast_sa[0], yeast.size());
-
+    
     std::less<uint8_t> lex_comp;
-    pfpds::pf_parsing<uint8_t> pfp(testfiles_dir + "/yeast.fasta", w, lex_comp);
+    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", w, lex_comp);
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta", dictionary.n_phrases() + 1);
+    pfpds::pf_parsing<uint8_t> pfp(dictionary, parse);
     pfpds::pfp_sa_support<uint8_t> sa_support(pfp);
 
     bool all_good = true;
@@ -191,9 +199,11 @@ TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
 TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 {
     pfpds::long_type w = 5;
-
+    
     std::less<uint32_t> int_comp;
-    pfpds::pf_parsing<uint32_t> pfp(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
+    pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta.parse", dictionary.n_phrases() + 1);
+    pfpds::pf_parsing<uint32_t> pfp(dictionary, parse);
     pfpds::pfp_sa_support<uint32_t> sa_support(pfp);
 
     // TEST sa_ds
@@ -283,7 +293,9 @@ TEST_CASE( "pfp<uint8_t> from example", "[small]" )
     // build pfp
     parse.push_back(0);
     std::less<uint8_t> lex_comp;
-    pfpds::pf_parsing<uint8_t> pfp(dict2, lex_comp, parse, frequencies, w, 0, true, true);
+    pfpds::dictionary<uint8_t> dictionary(dict2, w, lex_comp);
+    pfpds::parse pars(parse, dictionary.n_phrases() + 1);
+    pfpds::pf_parsing<uint8_t> pfp(dictionary, pars, true, true);
 
     std::vector<uint_t> colex_id = {1, 0, 3, 2, 10, 7, 17, 21, 11, 18, 13, 20, 22, 25, 6, 19, 23, 9, 5, 24, 15, 12, 8, 4, 16, 14};
     bool all_good = true;

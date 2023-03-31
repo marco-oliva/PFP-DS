@@ -17,29 +17,23 @@ namespace pfpds
 {
 
 // TODO: Extend it to non-integer alphabets
-class parse{
+class parse
+{
 public:
     std::vector<uint32_t> p;
     
-    // fixed size
-    static constexpr std::size_t sa_size_bits = 40;
-    sdsl::int_vector<sa_size_bits> saP;
-    sdsl::int_vector<sa_size_bits> isaP;
-    sdsl::int_vector<sa_size_bits> lcpP;
+    // size depends on input
+    sdsl::int_vector<0> saP;
+    sdsl::int_vector<0> isaP;
+    sdsl::int_vector<0> lcpP;
 
     sdsl::rmq_succinct_sct<> rmq_lcp_P;
-    // sdsl::bit_vector b_p; // Starting position of each phrase in D
-    // sdsl::bit_vector::rank_1_type rank_b_p;
-    // sdsl::bit_vector::select_1_type select_b_p;
     bool saP_flag = false;
     bool isaP_flag = false;
     bool lcpP_flag = false;
     bool rmq_lcp_P_flag = false;
     
     long_type alphabet_size;
-    
-    // Default constructor for load
-    parse() {}
     
     parse(
     std::vector<uint32_t>& p_,
@@ -74,6 +68,10 @@ public:
     
     void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_)
     {
+        long_type bytes_saP = 0;
+        long_type max_sa = p.size() + 1;
+        while (max_sa != 0) { max_sa >>= 8; bytes_saP++; }
+        
         // SA
         if(saP_flag_)
         {
@@ -82,8 +80,8 @@ public:
             std::vector<long_type> tmp_saP(p.size(), 0);
             sacak_int(&p[0], &tmp_saP[0], p.size(), alphabet_size);
             
-            spdlog::info("Using {} bytes for storing SA of the parsing", sa_size_bits / 8);
-            saP.resize(tmp_saP.size());
+            spdlog::info("Using {} bytes for storing SA of the parsing", bytes_saP);
+            saP = sdsl::int_vector<>(tmp_saP.size(), 0ULL, bytes_saP * 8);
 
             for (long_type i = 0; i < tmp_saP.size(); i++) { saP[i] = tmp_saP[i]; }
             );
@@ -96,8 +94,8 @@ public:
         {
             _elapsed_time(
             assert(saP_flag);
-            spdlog::info("Using {} bytes for ISA of the parsing", sa_size_bits / 8);
-            isaP.resize(saP.size());
+            spdlog::info("Using {} bytes for ISA of the parsing", bytes_saP);
+            isaP = sdsl::int_vector<>(p.size(), 0ULL, bytes_saP * 8);
             for (long_type i = 0; i < saP.size(); i++) { isaP[saP[i]] = i; }
             );
             isaP_flag = true;
@@ -108,8 +106,8 @@ public:
         {
             _elapsed_time(
             assert(saP_flag and isaP_flag);
-            spdlog::info("Using {} bytes for LCP of the parsing", sa_size_bits / 8);
-            lcpP.resize(saP.size());
+            spdlog::info("Using {} bytes for LCP of the parsing", bytes_saP);
+            lcpP = sdsl::int_vector<>(p.size(), 0ULL, bytes_saP * 8);
 
             // Kasai et al. LCP construction algorithm
             lcpP[0]  = 0;
@@ -143,58 +141,6 @@ public:
             );
         }
         
-    }
-    
-    // Serialize to a stream.
-    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
-    {
-        sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        long_type written_bytes = 0;
-        
-//        written_bytes += my_serialize(p, out, child, "parse");
-//        written_bytes += my_serialize(saP, out, child, "saP");
-//        written_bytes += my_serialize(isaP, out, child, "isaP");
-//        written_bytes += my_serialize(lcpP, out, child, "lcpP");
-//        written_bytes += rmq_lcp_P.serialize(out, child, "rmq_lcp_P");
-        // written_bytes += b_p.serialize(out, child, "b_p");
-        // written_bytes += rank_b_p.serialize(out, child, "rank_b_p");
-        // written_bytes += select_b_p.serialize(out, child, "select_b_p");
-//        written_bytes += sdsl::write_member(alphabet_size, out, child, "alphabet_size");
-        // written_bytes += sdsl::serialize(p, out, child, "parse");
-        // written_bytes += sdsl::serialize(saP, out, child, "saP");
-        // written_bytes += sdsl::serialize(isaP, out, child, "isaP");
-        // written_bytes += sdsl::serialize(lcpP, out, child, "lcpP");
-        // written_bytes += rmq_lcp_P.serialize(out, child, "rmq_lcp_P");
-        // // written_bytes += b_p.serialize(out, child, "b_p");
-        // // written_bytes += rank_b_p.serialize(out, child, "rank_b_p");
-        // // written_bytes += select_b_p.serialize(out, child, "select_b_p");
-        // written_bytes += sdsl::write_member(alphabet_size, out, child, "alphabet_size");
-        
-        sdsl::structure_tree::add_size(child, written_bytes);
-        return written_bytes;
-    }
-    
-    //! Load from a stream.
-    void load(std::istream &in)
-    {
-//        my_load(p, in);
-//        my_load(saP, in);
-//        my_load(isaP, in);
-//        my_load(lcpP, in);
-//        rmq_lcp_P.load(in);
-        // b_p.load(in);
-        // rank_b_p.load(in);
-        // select_b_p.load(in);
-//        sdsl::read_member(alphabet_size, in);
-        // sdsl::load(p, in);
-        // sdsl::load(saP, in);
-        // sdsl::load(isaP, in);
-        // sdsl::load(lcpP, in);
-        // rmq_lcp_P.load(in);
-        // // b_p.load(in);
-        // // rank_b_p.load(in);
-        // // select_b_p.load(in);
-        // sdsl::read_member(alphabet_size, in);
     }
     
 };
