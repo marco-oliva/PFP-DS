@@ -37,133 +37,97 @@
 namespace pfpds
 {
 
-template<typename dict_data_type, typename colex_comparator_type = std::less<dict_data_type>, class wt_t = pfp_wt_custom>
-class pf_parsing{
+template <typename dict_data_type, typename colex_comparator_type = std::less<dict_data_type>, class wt_t = pfp_wt_custom>
+class pf_parsing
+{
 public:
-    struct M_entry_t{
+    struct M_entry_t
+    {
         long_type len;
         long_type left; // left and right are the extremes of the range
         long_type right;
     };
     
+    // references to dictionary and parse
+    const dictionary<dict_data_type, colex_comparator_type>& dict;
+    
+    const parse& pars;
+    
+    // data structures stored in the pfp class
     long_type n; // Size of the text
     long_type w; // Size of the window
     
-    dictionary<dict_data_type, colex_comparator_type> dict;
-    parse pars;
     std::vector<long_type> freq;
     
     sdsl::bit_vector b_bwt;
+    
     sdsl::bit_vector::rank_1_type b_bwt_rank_1;
+    
     sdsl::bit_vector::select_1_type b_bwt_select_1;
+    
     std::vector<M_entry_t> M;
     
     wt_t w_wt;
     
-    long_type shift;
-    
-    std::vector<std::vector<long_type>> bwt_p_ilist;
+    std::vector<sdsl::int_vector<0>> bwt_p_ilist;
     
     sdsl::bit_vector b_p;
+    
     sdsl::bit_vector::rank_1_type rank_b_p;
+    
     sdsl::bit_vector::select_1_type select_b_p;
     
-    bool W_built = false;
-    bool bwt_P_ilist_built = false;
+    bool W_flag = false;
+    bool bwt_P_ilist_flag = false;
     
-    // Default constructor for load
-    pf_parsing() {}
-    
-    pf_parsing(std::vector<dict_data_type> &d_,
-    colex_comparator_type& colex_comparator,
-    std::vector<uint32_t> &p_,
-    std::vector<long_type> &freq_,
-    long_type w_, long_type shift = 0,
-    bool build_W_flag = true, bool build_bwt_P_ilist_flag = false) :
-    dict(d_, w_, colex_comparator),
-    pars(p_, dict.n_phrases() + 1),
-    freq(freq_),
-    w(w_),
-    shift(shift)
+    pf_parsing(
+    const dictionary<dict_data_type, colex_comparator_type>& d,
+    const parse& p,
+    bool W_flag_ = false,
+    bool bwt_P_ilist_flag_ = false)
+    :dict(d), pars(p), w(dict.w), freq(d.n_phrases() + 1, 0)
     {
-        // Uploading the frequency file
-        assert(freq[0] == 0);
-        
-        // Compute the length of the string;
-        compute_n();
-        
-        spdlog::info("Computing b_p");
-        compute_b_p();
-        
-        spdlog::info("Computing b_bwt and M of the parsing");
-        build_b_bwt_and_M();
-        
-        if (build_W_flag)
-        {
-            spdlog::info("Computing W of BWT(P)");
-            build_W();
-        }
-        
-        if (build_bwt_P_ilist_flag)
-        {
-            spdlog::info("Computing inverted list of BWT(P)");
-            build_bwt_P_ilist();
-        }
-
-        // Clear unnecessary elements
-        clear_unnecessary_elements();
-    }
-    
-    pf_parsing( std::string filename, long_type w_, colex_comparator_type& colex_comparator,
-    long_type shift = 0, bool build_W_flag = true, bool build_bwt_P_ilist_flag = false):
-    dict(filename, w_, colex_comparator),
-    pars(filename,dict.n_phrases()+1),
-    freq(dict.n_phrases() + 1,0),
-    w(w_),
-    shift(shift)
-    {
-        // Generating freq
+        // compute frequencies
         for (long_type i = 0; i < pars.p.size() - 1; i++) { freq[pars.p[i]] += 1; } // p ends with 0
         assert(freq[0] == 0);
         
         // Compute the length of the string;
         compute_n();
         
-        // b_p(pfp.n,0);
-
         spdlog::info("Computing b_p");
         compute_b_p();
         
         spdlog::info("Computing b_bwt and M of the parsing");
         build_b_bwt_and_M();
         
-        if (build_W_flag)
+        if (W_flag_)
         {
             spdlog::info("Computing W of BWT(P)");
             build_W();
+            W_flag = true;
         }
         
-        if (build_bwt_P_ilist_flag)
+        if (bwt_P_ilist_flag_)
         {
             spdlog::info("Computing inverted list of BWT(P)");
             build_bwt_P_ilist();
+            bwt_P_ilist_flag = true;
         }
-        
-        
-        // Clear unnecessary elements
-        clear_unnecessary_elements();
     }
     
-    void compute_b_p() {
+    void
+    compute_b_p()
+    {
         // Build the bitvector storing the position of the beginning of each phrase.
         b_p.resize(this->n); // all should be initialized at false by sdsl
-        for(long_type i = 0; i < b_p.size(); ++i)
+        for (long_type i = 0; i < b_p.size(); ++i)
             b_p[i] = false; // bug in resize
         b_p[0] = true; // phrase_0 becomes phrase 1
         
         long_type i = 0;
         
-        for(long_type j = 0; j < pars.p.size()-2; ++j){ // -2 because the beginning of the last phrase is in position 0
+        for (long_type j = 0; j < pars.p.size() - 2; ++j)
+        { // -2 because the beginning of the last phrase is in position 0
             // p[i]: phrase_id
             assert(pars.p[j] != 0);
             // phrase_length: select_b_d(p[i]+1)-select_b_d(p[i]);
@@ -176,7 +140,9 @@ public:
         select_b_p = sdsl::bit_vector::select_1_type(&b_p);
     }
     
-    void compute_n(){
+    void
+    compute_n()
+    {
         // Compute the length of the string;
         n = 0;
         for (long_type j = 0; j < pars.p.size() - 1; ++j)
@@ -188,17 +154,22 @@ public:
         //n += w; // + w because n is the length including the last w markers
         //n += w - 1; // Changed after changind b_d in dict // -1 is for the first dollar + w because n is the length including the last w markers
     }
-
-    void build_b_bwt_and_M()
+    
+    void
+    build_b_bwt_and_M()
     {
+        assert(dict.saD_flag);
+        assert(dict.lcpD_flag);
+        assert(dict.daD_flag);
+        assert(dict.colex_daD_flag);
+        
         b_bwt.resize(n);
-        for (long_type i = 0; i < b_bwt.size(); ++i)
-            b_bwt[i] = false; // bug in resize
+        for (long_type i = 0; i < b_bwt.size(); ++i) { b_bwt[i] = false; } // bug in resize
         
         assert(dict.d[dict.saD[0]] == EndOfDict);
         long_type i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
         long_type j = 0;
-
+        
         while (i < dict.saD.size())
         {
             long_type left = i;
@@ -227,7 +198,8 @@ public:
                     assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
                     long_type new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
                     
-                    while (i < dict.saD.size() && (dict.lcpD[i] >= suffix_length) && (suffix_length == new_suffix_length))
+                    while (i < dict.saD.size() && (dict.lcpD[i] >= suffix_length)
+                    && (suffix_length == new_suffix_length))
                     {
                         j += freq[new_phrase];
                         ++i;
@@ -258,13 +230,16 @@ public:
         b_bwt_select_1 = sdsl::bit_vector::select_1_type(&b_bwt);
     }
     
-    void build_W()
+    void
+    build_W()
     {
-        this->W_built = true;
+        assert(dict.colex_id_flag);
+        assert(pars.saP_flag);
         
         // create alphabet (phrases)
         std::vector<uint32_t> alphabet(dict.n_phrases());
-        for (long_type i = 0; i < dict.n_phrases(); ++i) {
+        for (long_type i = 0; i < dict.n_phrases(); ++i)
+        {
             alphabet[i] = dict.colex_id[i] + 1;
         }
         
@@ -272,142 +247,52 @@ public:
         std::vector<uint32_t> bwt_p(pars.p.size() - 1, 0);
         for (long_type i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
         {
-            if (pars.saP[i] > 0)
-                bwt_p[i - 1] = pars.p[pars.saP[i] - 1];
-            else
-                bwt_p[i - 1] = pars.p[pars.p.size() - 2]; // TODO: this should be -1 only if 0 stay in pars
+            if (pars.saP[i] > 0) { bwt_p[i - 1] = pars.p[pars.saP[i] - 1]; }
+            else { bwt_p[i - 1] = pars.p[pars.p.size() - 2]; } // TODO: this should be -1 only if 0 stay in pars
         }
         
         w_wt.construct(alphabet, bwt_p);
     }
     
-    void build_bwt_P_ilist()
+    void
+    build_bwt_P_ilist()
     {
-        this->bwt_P_ilist_built = true;
+        assert(pars.saP_flag);
+        
+        // allocate lists
+        bwt_p_ilist.resize(dict.n_phrases() + 1);
+        
+        long_type bytes_ilist = 0;
+        long_type bwt_length = pars.p.size();
+        while (bwt_length != 0) { bwt_length >>= 8; bytes_ilist++; }
+        spdlog::info("Using {} bytes for storing the inverted list of the BWT of the parse", bytes_ilist);
+        
+        for (long_type i = 1; i < dict.n_phrases() + 1; i++)
+        {
+            bwt_p_ilist[i] = sdsl::int_vector<>(freq[i], 0ULL, bytes_ilist * 8);
+        }
         
         // create BWT(P)
-        bwt_p_ilist.resize(dict.n_phrases() + 1);
+        std::vector<long_type> ilists_iterators(dict.n_phrases() + 1, 0);
         for (long_type i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
         {
-            if (pars.saP[i] > 0) { bwt_p_ilist[pars.p[pars.saP[i] - 1]].emplace_back(i - 1); }
-            else { bwt_p_ilist[pars.p[pars.p.size() - 2]].emplace_back(i - 1); }
+            if (pars.saP[i] > 0)
+            {
+                auto& il_it = ilists_iterators[pars.p[pars.saP[i] - 1]];
+                bwt_p_ilist[pars.p[pars.saP[i] - 1]][il_it] = i - 1;
+                il_it++;
+            }
+            else
+            {
+                auto& il_it = ilists_iterators[pars.p[pars.p.size() - 2]];
+                bwt_p_ilist[pars.p[pars.p.size() - 2]][ilists_iterators[il_it]] = i - 1;
+                il_it++;
+            }
         }
     }
-    
-    void clear_unnecessary_elements()
-    {
-        // dict.daD.resize(0);
-        // dict.colex_daD.clear();
-        // dict.colex_id.clear();
-        // dict.inv_colex_id.clear();
-        // pars.saP.clear(); // It is needed in sa_support
-        //    dict.rmq_colex_daD.clear();
-        //    dict.rMq_colex_daD.clear();
-    }
-    
-    // Serialize to a stream.
-    long_type serialize(std::ostream &out, sdsl::structure_tree_node *v = nullptr, std::string name = "") const
-    {
-        sdsl::structure_tree_node *child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
-        long_type written_bytes = 0;
-        
-        written_bytes += dict.serialize(out, child, "dictionary");
-        written_bytes += pars.serialize(out, child, "parse");
-        written_bytes += my_serialize(freq, out, child, "frequencies");
-        written_bytes += sdsl::write_member(n, out, child, "n");
-        written_bytes += sdsl::write_member(w, out, child, "w");
-        written_bytes += b_bwt.serialize(out, child, "b_bwt");
-        written_bytes += b_bwt_rank_1.serialize(out, child, "b_bwt_rank_1");
-        written_bytes += b_bwt_select_1.serialize(out, child, "b_bwt_select_1");
-        written_bytes += sdsl::serialize(M, out, child, "M");
-        written_bytes += w_wt.serialize(out, child, "w_wt");
-        written_bytes += b_p.serialize(out, child, "b_p");
-        written_bytes += rank_b_p.serialize(out, child, "rank_b_p");
-        written_bytes += select_b_p.serialize(out, child, "select_b_p");
-        // written_bytes += dict.serialize(out, child, "dictionary");
-        // written_bytes += pars.serialize(out, child, "parse");
-        // written_bytes += sdsl::serialize(freq, out, child, "frequencies");
-        // written_bytes += sdsl::write_member(n, out, child, "n");
-        // written_bytes += sdsl::write_member(w, out, child, "w");
-        // written_bytes += b_bwt.serialize(out, child, "b_bwt");
-        // written_bytes += b_bwt_rank_1.serialize(out, child, "b_bwt_rank_1");
-        // written_bytes += b_bwt_select_1.serialize(out, child, "b_bwt_select_1");
-        // written_bytes += sdsl::serialize(M, out, child, "M");
-        // written_bytes += w_wt.serialize(out, child, "w_wt");
-        // written_bytes += b_p.serialize(out, child, "b_p");
-        // written_bytes += rank_b_p.serialize(out, child, "rank_b_p");
-        // written_bytes += select_b_p.serialize(out, child, "select_b_p");
-        
-        sdsl::structure_tree::add_size(child, written_bytes);
-        return written_bytes;
-    }
-    
-    //! Load from a stream.
-    void load(std::istream &in)
-    {
-        dict.load(in);
-        pars.load(in);
-        my_load(freq, in);
-        sdsl::read_member(n, in);
-        sdsl::read_member(w, in);
-        b_bwt.load(in);
-        b_bwt_rank_1.load(in, &b_bwt);
-        b_bwt_select_1.load(in, &b_bwt);
-        sdsl::load(M, in);
-        w_wt.load(in);
-        b_p.load(in);
-        rank_b_p.load(in, &b_p);
-        select_b_p.load(in, &b_p);
-        // dict.load(in);
-        // pars.load(in);
-        // sdsl::load(freq, in);
-        // sdsl::read_member(n, in);
-        // sdsl::read_member(w, in);
-        // b_bwt.load(in);
-        // b_bwt_rank_1.load(in, &b_bwt);
-        // b_bwt_select_1.load(in, &b_bwt);
-        // sdsl::load(M, in);
-        // w_wt.load(in);
-        // b_p.load(in);
-        // rank_b_p.load(in, &b_p);
-        // select_b_p.load(in, &b_p);
-    }
-    
-    std::string filesuffix() const
-    {
-        return ".pf.ds.other";
-    }
-    
-    
 };
 
-
-//// Specialization for pfp_wt_custom
-//template <>
-//std::string pf_parsing<pfp_wt_custom>::filesuffix() const
-//{
-//    return ".pf.ds";
-//}
-//
-//// Specialization for pfp_wt_sdsl
-//template <>
-//std::string pf_parsing<pfp_wt_sdsl>::filesuffix() const
-//{
-//    return ".pf.wt_sdsl.ds";
-//}
-//
-//// Specialization for pfp_wt_sdsl_2
-//template <>
-//std::string pf_parsing<pfp_wt_sdsl_2>::filesuffix() const
-//{
-//    return ".pf.wt_sdsl_2.ds";
-//}
-//
-//using pf_parsing_custom = pf_parsing<pfp_wt_custom>;
-//using pf_parsing_sdsl = pf_parsing<pfp_wt_sdsl>;
-
 }
-
 
 
 #endif /* end of include guard: _PFP_HH */

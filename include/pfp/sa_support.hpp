@@ -46,7 +46,11 @@ public:
         return pfp.n;
     }
     
-    long_type operator()(long_type i) {
+    long_type operator()(long_type i)
+    {
+        assert(pfp.W_flag);
+        assert(pfp.pars.saP_flag);
+        
         // i + 1 -> rank is for (0 ... i - 1) interval
         const auto rank_i = pfp.b_bwt_rank_1(i + 1);
         const auto lex_rank_i = rank_i - 1;
