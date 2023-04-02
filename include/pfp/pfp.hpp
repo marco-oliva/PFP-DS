@@ -69,15 +69,13 @@ public:
     
     wt_t w_wt;
     
-    std::vector<std::vector<long_type>> bwt_p_ilist;
+    std::vector<sdsl::int_vector<0>> bwt_p_ilist;
     
     sdsl::bit_vector b_p;
     
     sdsl::bit_vector::rank_1_type rank_b_p;
     
     sdsl::bit_vector::select_1_type select_b_p;
-    
-    bool W_built = false;
     
     bool W_flag = false;
     bool bwt_P_ilist_flag = false;
@@ -160,9 +158,13 @@ public:
     void
     build_b_bwt_and_M()
     {
+        assert(dict.saD_flag);
+        assert(dict.lcpD_flag);
+        assert(dict.daD_flag);
+        assert(dict.colex_daD_flag);
+        
         b_bwt.resize(n);
-        for (long_type i = 0; i < b_bwt.size(); ++i)
-        { b_bwt[i] = false; } // bug in resize
+        for (long_type i = 0; i < b_bwt.size(); ++i) { b_bwt[i] = false; } // bug in resize
         
         assert(dict.d[dict.saD[0]] == EndOfDict);
         long_type i = 1; // This should be safe since the first entry of sa is always the dollarsign used to compute the sa
@@ -231,7 +233,8 @@ public:
     void
     build_W()
     {
-        this->W_built = true;
+        assert(dict.colex_id_flag);
+        assert(pars.saP_flag);
         
         // create alphabet (phrases)
         std::vector<uint32_t> alphabet(dict.n_phrases());
@@ -244,10 +247,8 @@ public:
         std::vector<uint32_t> bwt_p(pars.p.size() - 1, 0);
         for (long_type i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
         {
-            if (pars.saP[i] > 0)
-                bwt_p[i - 1] = pars.p[pars.saP[i] - 1];
-            else
-                bwt_p[i - 1] = pars.p[pars.p.size() - 2]; // TODO: this should be -1 only if 0 stay in pars
+            if (pars.saP[i] > 0) { bwt_p[i - 1] = pars.p[pars.saP[i] - 1]; }
+            else { bwt_p[i - 1] = pars.p[pars.p.size() - 2]; } // TODO: this should be -1 only if 0 stay in pars
         }
         
         w_wt.construct(alphabet, bwt_p);
@@ -256,16 +257,37 @@ public:
     void
     build_bwt_P_ilist()
     {
-        this->bwt_P_ilist_built = true;
+        assert(pars.saP_flag);
+        
+        // allocate lists
+        bwt_p_ilist.resize(dict.n_phrases() + 1);
+        
+        long_type bytes_ilist = 0;
+        long_type bwt_length = pars.p.size();
+        while (bwt_length != 0) { bwt_length >>= 8; bytes_ilist++; }
+        spdlog::info("Using {} bytes for storing the inverted list of the BWT of the parse", bytes_ilist);
+        
+        for (long_type i = 1; i < dict.n_phrases() + 1; i++)
+        {
+            bwt_p_ilist[i] = sdsl::int_vector<>(freq[i], 0ULL, bytes_ilist * 8);
+        }
         
         // create BWT(P)
-        bwt_p_ilist.resize(dict.n_phrases() + 1);
+        std::vector<long_type> ilists_iterators(dict.n_phrases() + 1, 0);
         for (long_type i = 1; i < pars.saP.size(); ++i) // TODO: shoud we count end symbol in this?
         {
             if (pars.saP[i] > 0)
-            { bwt_p_ilist[pars.p[pars.saP[i] - 1]].emplace_back(i - 1); }
+            {
+                auto& il_it = ilists_iterators[pars.p[pars.saP[i] - 1]];
+                bwt_p_ilist[pars.p[pars.saP[i] - 1]][il_it] = i - 1;
+                il_it++;
+            }
             else
-            { bwt_p_ilist[pars.p[pars.p.size() - 2]].emplace_back(i - 1); }
+            {
+                auto& il_it = ilists_iterators[pars.p[pars.p.size() - 2]];
+                bwt_p_ilist[pars.p[pars.p.size() - 2]][ilists_iterators[il_it]] = i - 1;
+                il_it++;
+            }
         }
     }
 };

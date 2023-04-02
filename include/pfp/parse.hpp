@@ -39,9 +39,9 @@ public:
     std::vector<uint32_t>& p_,
     long_type alphabet_size_,
     bool saP_flag_ = true,
-    bool isaP_flag_ = false,
-    bool lcpP_flag_ = false,
-    bool rmq_lcp_P_flag_ = false ):
+    bool isaP_flag_ = true,
+    bool lcpP_flag_ = true,
+    bool rmq_lcp_P_flag_ = true):
     p(p_),
     alphabet_size(alphabet_size_)
     {

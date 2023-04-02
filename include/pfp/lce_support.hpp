@@ -41,12 +41,20 @@ public:
     const pf_parsing<dict_data_type, colex_comparator_type, wt_t>& pfp;
     
     // This has to be changed using pfp_dictionary and pfp_parse
-    pfp_lce_support(pf_parsing<dict_data_type, wt_t>& pfp_):
+    pfp_lce_support(pf_parsing<dict_data_type, colex_comparator_type, wt_t>& pfp_):
     pfp(pfp_)
     { }
     
     // return the longest common prefix of suffix i and j of T
-    size_t lce(size_t i, size_t j){
+    long_type operator()(long_type i, long_type j)
+    {
+        assert(pfp.W_flag);
+        assert(pfp.pars.saP_flag);
+        assert(pfp.pars.isaP_flag);
+        assert(pfp.pars.lcpP_flag);
+        assert(pfp.dict.isaD_flag);
+        assert(pfp.dict.lcpD_flag);
+        
         // Adjustment of text indicies
         // This is because, the text is considered to be cyclic.
         i = (i + pfp.w) % pfp.n;
@@ -56,8 +64,8 @@ public:
             return pfp.n-i;
         
         // find the phrases of which i and j belongs to
-        size_t p_i = pfp.rank_b_p(i+1);// - 1; // rank of the phrase in T that i belongs to. Span: [1..|P|]
-        size_t p_j = pfp.rank_b_p(j+1);// - 1; // rank of the phrase in T that j belongs to. Span: [1..|P|]
+        long_type p_i = pfp.rank_b_p(i+1);// - 1; // rank of the phrase in T that i belongs to. Span: [1..|P|]
+        long_type p_j = pfp.rank_b_p(j+1);// - 1; // rank of the phrase in T that j belongs to. Span: [1..|P|]
         // NOTE: i+1 since rank return the number of 1s in v[0..i-1]
         
         
@@ -69,14 +77,14 @@ public:
         auto tmp_s_pj = pfp.select_b_p(p_j);
         // find the length of the suffixes iof id_p_i and id_p_j starting at i and j
         // Length of the phrrase - length of the prefix.
-        size_t len_suff_i_in_p_i = pfp.dict.length_of_phrase(id_p_i) - (i - pfp.select_b_p(p_i));// + 1);
-        size_t len_suff_j_in_p_j = pfp.dict.length_of_phrase(id_p_j) - (j - pfp.select_b_p(p_j));// + 1);
-        size_t k = std::min(len_suff_i_in_p_i,len_suff_j_in_p_j);
+        long_type len_suff_i_in_p_i = pfp.dict.length_of_phrase(id_p_i) - (i - pfp.select_b_p(p_i));// + 1);
+        long_type len_suff_j_in_p_j = pfp.dict.length_of_phrase(id_p_j) - (j - pfp.select_b_p(p_j));// + 1);
+        long_type k = std::min(len_suff_i_in_p_i,len_suff_j_in_p_j);
         
         // find the occurrence of i and j in the concatenation of the phrases of D
         // Starting position of the phrase in D + length of the prefix.
-        size_t occ_in_p_i_in_D = pfp.dict.select_b_d(id_p_i) + (i - pfp.select_b_p(p_i));
-        size_t occ_in_p_j_in_D = pfp.dict.select_b_d(id_p_j) + (j - pfp.select_b_p(p_j));
+        long_type occ_in_p_i_in_D = pfp.dict.select_b_d(id_p_i) + (i - pfp.select_b_p(p_i));
+        long_type occ_in_p_j_in_D = pfp.dict.select_b_d(id_p_j) + (j - pfp.select_b_p(p_j));
         
         // compute the LCP of the suffix up to the phrase boundaries.
         auto lcp_ppi_ppj = 0;
@@ -86,8 +94,8 @@ public:
             lcp_ppi_ppj = k;
         }else{
             auto lcp_left = std::min(pfp.dict.isaD[occ_in_p_i_in_D],pfp.dict.isaD[occ_in_p_j_in_D])+1;
-            auto lcp_right = max(pfp.dict.isaD[occ_in_p_i_in_D],pfp.dict.isaD[occ_in_p_j_in_D]);
-            size_t lcp_ppi_ppj_i = pfp.dict.rmq_lcp_D(lcp_left,lcp_right);
+            auto lcp_right = std::max(pfp.dict.isaD[occ_in_p_i_in_D],pfp.dict.isaD[occ_in_p_j_in_D]);
+            long_type lcp_ppi_ppj_i = pfp.dict.rmq_lcp_D(lcp_left,lcp_right);
             lcp_ppi_ppj = pfp.dict.lcpD[lcp_ppi_ppj_i];
         }
         
@@ -101,16 +109,16 @@ public:
             auto p_jp1_in_sa = pfp.pars.isaP[p_j];
             
             auto lcp_left = std::min(p_ip1_in_sa,p_jp1_in_sa)+1;
-            auto lcp_right = max(p_ip1_in_sa,p_jp1_in_sa);
-            size_t lcp_pi_pj_i = pfp.pars.rmq_lcp_P(lcp_left,lcp_right);
+            auto lcp_right = std::max(p_ip1_in_sa,p_jp1_in_sa);
+            long_type lcp_pi_pj_i = pfp.pars.rmq_lcp_P(lcp_left,lcp_right);
             auto lcp_pi_pj = pfp.pars.lcpP[lcp_pi_pj_i];
             
-            // size_t l_com_phrases = 0
+            // long_type l_com_phrases = 0
             // for l in range(lcp_pi_pj):
             // #               print(p_i + 1 + l)
             // l_com_phrases += len(self.D[self.P[p_i + 1 + l]]) - w
             
-            size_t l_com_phrases = pfp.select_b_p(p_i + 1 + lcp_pi_pj) - pfp.select_b_p(p_i + 1); // Check if there is some error it might be here
+            long_type l_com_phrases = pfp.select_b_p(p_i + 1 + lcp_pi_pj) - pfp.select_b_p(p_i + 1); // Check if there is some error it might be here
             
             
             auto a = pfp.pars.p[p_i + lcp_pi_pj]; // p is 0-based
@@ -125,9 +133,9 @@ public:
             auto b_in_sa = pfp.dict.isaD[pfp.dict.select_b_d(b)]; // position of the phrase b in saD
             
             lcp_left = std::min(a_in_sa,b_in_sa) + 1;
-            lcp_right = max(a_in_sa,b_in_sa);
+            lcp_right = std::max(a_in_sa,b_in_sa);
             
-            size_t lcp_a_b_i = pfp.dict.rmq_lcp_D(lcp_left, lcp_right);
+            long_type lcp_a_b_i = pfp.dict.rmq_lcp_D(lcp_left, lcp_right);
             auto lcp_a_b = pfp.dict.lcpD[lcp_a_b_i];
             
             return k + l_com_phrases + lcp_a_b;
