@@ -79,13 +79,14 @@ public:
     
     bool W_built = false;
     
-    bool bwt_P_ilist_built = false;
+    bool W_flag = false;
+    bool bwt_P_ilist_flag = false;
     
     pf_parsing(
     const dictionary<dict_data_type, colex_comparator_type>& d,
     const parse& p,
-    bool build_W_flag = true,
-    bool build_bwt_P_ilist_flag = false)
+    bool W_flag_ = false,
+    bool bwt_P_ilist_flag_ = false)
     :dict(d), pars(p), w(dict.w), freq(d.n_phrases() + 1, 0)
     {
         // compute frequencies
@@ -101,16 +102,18 @@ public:
         spdlog::info("Computing b_bwt and M of the parsing");
         build_b_bwt_and_M();
         
-        if (build_W_flag)
+        if (W_flag_)
         {
             spdlog::info("Computing W of BWT(P)");
             build_W();
+            W_flag = true;
         }
         
-        if (build_bwt_P_ilist_flag)
+        if (bwt_P_ilist_flag_)
         {
             spdlog::info("Computing inverted list of BWT(P)");
             build_bwt_P_ilist();
+            bwt_P_ilist_flag = true;
         }
     }
     

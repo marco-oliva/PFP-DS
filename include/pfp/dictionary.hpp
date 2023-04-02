@@ -111,9 +111,8 @@ public:
         // 1. Count how many dollars there are
         int i = 0;
         int n_dollars = 0;
-        while(i < d.size() && d[i++] == Dollar)
-            ++n_dollars;
-        std::vector<data_type> dollars(w-n_dollars,Dollar);
+        while(i < d.size() && d[i++] == Dollar) { ++n_dollars; }
+        std::vector<data_type> dollars(w-n_dollars, Dollar);
         d.insert(d.begin(), dollars.begin(), dollars.end());
         assert(d.back() == 0);
         
