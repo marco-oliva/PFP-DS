@@ -211,7 +211,7 @@ void read_file(const char *filename, std::vector<T>& ptr){
         spdlog::error("stat() file " + std::string(filename) + " failed" );
 
     if(filestat.st_size % sizeof(T) != 0)
-        spdlog::error("invilid file " + std::string(filename));
+        spdlog::error("invalid file " + std::string(filename));
 
     size_t length = filestat.st_size / sizeof(T);
     ptr.resize(length);

@@ -50,7 +50,6 @@ public:
     
     // references to dictionary and parse
     const dictionary<dict_data_type, colex_comparator_type>& dict;
-    
     const parse& pars;
     
     // data structures stored in the pfp class
@@ -114,6 +113,8 @@ public:
             bwt_P_ilist_flag = true;
         }
     }
+
+    pf_parsing(const pf_parsing&) = delete;
     
     void
     compute_b_p()
@@ -198,8 +199,7 @@ public:
                     assert(new_phrase > 0 && new_phrase < freq.size()); // + 1 because daD is 0-based
                     long_type new_suffix_length = dict.select_b_d(dict.rank_b_d(new_sn + 1) + 1) - new_sn - 1;
                     
-                    while (i < dict.saD.size() && (dict.lcpD[i] >= suffix_length)
-                    && (suffix_length == new_suffix_length))
+                    while (i < dict.saD.size() and (dict.lcpD[i] >= suffix_length) and (suffix_length == new_suffix_length))
                     {
                         j += freq[new_phrase];
                         ++i;

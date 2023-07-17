@@ -133,6 +133,16 @@ if(NOT gsacak_POPULATED)
     target_compile_options(gsacak64 PUBLIC -DM64)
 endif()
 
+FetchContent_Declare(
+        kseq
+        GIT_REPOSITORY https://github.com/lh3/seqtk.git
+        GIT_TAG        v1.3
+)
+if(NOT kseq_POPULATED)
+    FetchContent_Populate(kseq)
+endif()
+include_directories(${kseq_SOURCE_DIR})
+
 ################################################################################
 # PFP-DS
 

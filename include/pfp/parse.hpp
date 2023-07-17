@@ -55,7 +55,7 @@ public:
     bool saP_flag_ = true,
     bool isaP_flag_ = false,
     bool lcpP_flag_ = false,
-    bool rmq_lcp_P_flag_ = false ):
+    bool rmq_lcp_P_flag_ = false):
     alphabet_size(alphabet_size_)
     {
         // Building parse from file
@@ -65,6 +65,8 @@ public:
         
         build(saP_flag_, isaP_flag_, lcpP_flag_, rmq_lcp_P_flag_);
     }
+
+    parse(const parse&) = delete;
     
     void build(bool saP_flag_, bool isaP_flag_, bool lcpP_flag_, bool rmq_lcp_P_flag_)
     {
@@ -75,7 +77,8 @@ public:
         // SA
         if(saP_flag_)
         {
-            _elapsed_time(
+            _elapsed_time
+            (
             spdlog::info("Using 8 bytes for computing SA of the parsing");
             std::vector<long_type> tmp_saP(p.size(), 0);
             sacak_int(&p[0], &tmp_saP[0], p.size(), alphabet_size);
@@ -92,7 +95,8 @@ public:
         // ISA
         if(isaP_flag_)
         {
-            _elapsed_time(
+            _elapsed_time
+            (
             assert(saP_flag);
             spdlog::info("Using {} bytes for ISA of the parsing", bytes_saP);
             isaP = sdsl::int_vector<>(p.size(), 0ULL, bytes_saP * 8);
@@ -104,7 +108,8 @@ public:
         // LCP
         if(lcpP_flag_)
         {
-            _elapsed_time(
+            _elapsed_time
+            (
             assert(saP_flag and isaP_flag);
             spdlog::info("Using {} bytes for LCP of the parsing", bytes_saP);
             lcpP = sdsl::int_vector<>(p.size(), 0ULL, bytes_saP * 8);
@@ -137,8 +142,8 @@ public:
             assert(lcpP_flag);
             spdlog::info("Computing RMQ over LCP of the parsing");
             rmq_lcp_P = sdsl::rmq_succinct_sct<>(&lcpP);
-            rmq_lcp_P_flag = true;
             );
+            rmq_lcp_P_flag = true;
         }
         
     }

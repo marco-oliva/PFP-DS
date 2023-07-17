@@ -1,8 +1,6 @@
 //
 //  unit_tests.cpp
 //
-//  Copyright 2022 Marco Oliva. All rights reserved.
-//
 
 #include <iostream>
 
@@ -33,24 +31,34 @@ std::string testfiles_dir = "../tests/files";
 
 //------------------------------------------------------------------------------
 
+#include <kseq.h>
+#include <stdio.h>
+KSEQ_INIT(int, read)
+
 template <class char_type>
-void read_fasta_file(const char *filename, std::vector<char_type>& v){
+void read_fasta_file(const char *filename, std::vector<char_type>& v, std::size_t w = 10)
+{
     FILE* fd;
-    
+
     if ((fd = fopen(filename, "r")) == nullptr)
-        spdlog::error("open() file " + std::string(filename) + " failed" );
-    
+    {
+        spdlog::error("open() file " + std::string(filename) + " failed");
+    }
+
     v.clear();
 
-    char c;
-    while (fread( &c, sizeof(char), 1,fd) == 1) {
-        if(c == '>'){
-            while(fread( &c, sizeof(char), 1,fd) == 1 && c != '\n');
-        }else{
-            v.push_back(c);
-            while(fread( &c, sizeof(char), 1,fd) == 1 && c!= '\n') v.push_back(c);
-        }
+    kseq_t *record;
+    record = kseq_init(fileno(fd));
+    while(kseq_read(record) >= 0)
+    {
+        // Add sequence
+        for (std::size_t i = 0; i < record->seq.l; i++) { v.push_back(record->seq.s[i]); }
+        v.insert(v.end(), w - 1, '\5'); // Dollar Prime
+        v.insert(v.end(), 1, '\4'); // Dollar Sequence
+        spdlog::info("Seq: {} {}", record->name.s, v.size());
     }
+
+    kseq_destroy(record);
     fclose(fd);
 }
 
@@ -84,7 +92,7 @@ TEST_CASE( "pfp<uint8_t> SA construction test", "[small]" )
     const size_t n_phrases = 5;
     const std::vector<size_t> phrase_length{8, 5, 7, 7, 8};
     sdsl::bit_vector b_bwt = {1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1};
-    
+
     const std::vector<std::pair<size_t, std::pair<size_t, size_t>>> M{
     {2, {0, 0}}, {6, {2, 2}}, {7, {3, 3}}, {7, {4, 4}}, {3, {0, 0}},
     {2, {2, 3}}, {2, {4, 4}}, {3, {1, 1}}, {5, {0, 0}}, {4, {2, 2}},
@@ -93,7 +101,7 @@ TEST_CASE( "pfp<uint8_t> SA construction test", "[small]" )
     {3, {4, 4}}, {4, {3, 3}}, {4, {4, 4}}
     };
     const std::vector<uint32_t> bwt_p = {3, 1, 4, 5, 2, 2};
-    
+
     // Extract the reverse of the phrases
     std::vector<std::pair<std::string,uint32_t>> rev_dict;
     int ir = 0;
@@ -106,48 +114,57 @@ TEST_CASE( "pfp<uint8_t> SA construction test", "[small]" )
         rev_dict.push_back({s,rank_r++});
     }
     std::sort(rev_dict.begin(),rev_dict.end());
-    
+
     std::vector<uint32_t> frequencies{0, 1, 2, 1, 1, 1};
     size_t w = 2;
-    
+
     spdlog::info("Begin paper test");
-    
+
     std::less<uint8_t> lex_comp;
     pfpds::dictionary<uint8_t> dict_obj(dict2, w, lex_comp);
     pfpds::parse parse_obj(parse, dict_obj.n_phrases() + 1);
     pfpds::pf_parsing<uint8_t, std::less<uint8_t>, pfpds::pfp_wt_sdsl> pf(dict_obj, parse_obj, true, true);
     pfpds::pf_parsing<uint8_t, std::less<uint8_t>, pfpds::pfp_wt_custom> pf_c(dict_obj, parse_obj, true, true);
     spdlog::info("Pfp built");
-    
+
     // TEST n
     REQUIRE(pf.n == text.size());
     spdlog::info("Test n");
-    
+
     // TEST n_phrases
     REQUIRE(pf.dict.n_phrases() == n_phrases);
     spdlog::info("Test n_phrases");
-    
+
+    // TEST lengths
+    REQUIRE(pf.dict.lengths.size() == 5);
+    REQUIRE(pf.dict.lengths[0] == 8);
+    REQUIRE(pf.dict.lengths[1] == 5);
+    REQUIRE(pf.dict.lengths[2] == 7);
+    REQUIRE(pf.dict.lengths[3] == 7);
+    REQUIRE(pf.dict.lengths[4] == 8);
+    spdlog::info("Test lengths");
+
     // TEST b_d
     for (pfpds::long_type i = 0; i < pf.dict.b_d.size(); ++i)
     {
         REQUIRE(pf.dict.b_d[i] ==  b_d[i]);
     }
     spdlog::info("Test b_d");
-    
+
     // TEST phrase_length
     for (pfpds::long_type i = 0; i < phrase_length.size(); ++i)
     {
         REQUIRE(pf.dict.length_of_phrase(i+1) == phrase_length[i]);
     }
     spdlog::info("Test phrase_length");
-    
+
     // TEST b_bwt
     for (pfpds::long_type i = 0; i < pf.b_bwt.size(); ++i)
     {
         REQUIRE(pf.b_bwt[i] == b_bwt[i]);
     }
     spdlog::info("Test b_bwt");
-    
+
     // TEST M
     for (pfpds::long_type i = 0; i < pf.M.size(); ++i)
     {
@@ -156,58 +173,61 @@ TEST_CASE( "pfp<uint8_t> SA construction test", "[small]" )
         REQUIRE(pf.M[i].right == M[i].second.second);
     }
     spdlog::info("Test M");
-    
+
     for (pfpds::long_type i = 0; i < dict_obj.colex_id.size(); ++i)
     {
         REQUIRE(dict_obj.colex_id[i] == rev_dict[i].second);
     }
     spdlog::info("Test colex id");
-    
+
     std::vector<pfpds::long_type> sa(text.size(), 0);
     std::iota(sa.begin(), sa.end(), 0);
     auto cyclic_sort = [&](const pfpds::long_type a, const pfpds::long_type b) {
         const auto max_cmp = text.size();
-        for (pfpds::long_type i = 0; i < max_cmp; ++i) {
+        for (pfpds::long_type i = 0; i < max_cmp; ++i)
+        {
             if (text[(a + i) % text.size()] != text[(b + i) % text.size()])
+            {
                 return text[(a + i) % text.size()] < text[(b + i) % text.size()];
+            }
         }
         return false; // supress return warning
     };
     std::sort(sa.begin(), sa.end(), cyclic_sort);
-    
+
     pfpds::pfp_lce_support<uint8_t, std::less<uint8_t>, pfpds::pfp_wt_sdsl> lce_ds(pf);
     pfpds::pfp_sa_support<uint8_t, std::less<uint8_t>, pfpds::pfp_wt_sdsl> pf_sa(pf);
-    
+
     pfpds::pfp_lce_support<uint8_t, std::less<uint8_t>, pfpds::pfp_wt_custom> lce_ds_custom(pf_c);
     pfpds::pfp_sa_support<uint8_t, std::less<uint8_t>, pfpds::pfp_wt_custom> pf_sa_custom(pf_c);
-    
+
     // TEST BWT(P) - wavelet tree
     for (pfpds::long_type i = 0; i < pf.w_wt.size(); ++i)
     {
         REQUIRE(pf.w_wt[i] == bwt_p[i]);
     }
     spdlog::info("Test BWT(P)");
-    
+
     // TEST BWT(P) - wavelet tree
     for (pfpds::long_type i = 0; i < pf.w_wt.size(); ++i)
     {
         REQUIRE(pf.w_wt[i] == pf_c.w_wt[i]);
     }
     spdlog::info("Test comparing WT custom vs. SDSL");
-    
+
     for (pfpds::long_type i = 0; i < pf_sa.size(); ++i)
     {
         REQUIRE(pf_sa(i) ==  sa[i]);
     }
     spdlog::info("Test PFP SA");
-    
+
     for (pfpds::long_type i = 0; i < pf_sa.size(); ++i)
     {
         REQUIRE(pf_sa(i) == pf_sa_custom(i));
     }
     spdlog::info("Test PFP comparing SA SDSL vs. custom");
-    
-    
+
+
     uint8_t num_bytes = 1;
     // build cst of the Text
     spdlog::info("Computing CSA of the text");
@@ -221,29 +241,28 @@ TEST_CASE( "pfp<uint8_t> SA construction test", "[small]" )
         REQUIRE(pf_sa(i) == (csa[i] + (tmp_text.size()) - w + 1) % (tmp_text.size()));
     }
     spdlog::info("Test PFP SA and cst");
-    
+
     std::vector<pfpds::long_type> isa(text.size(), 0);
     std::vector<pfpds::long_type> lcp(text.size(), 0);
     for (pfpds::long_type i = 0; i < sa.size(); ++i)
     {
         isa[sa[i]] = i;
     }
-    
+
     pfpds::LCP_array_cyclic_text(&text[0], isa, sa, text.size(), lcp);
-    
+
     for (pfpds::long_type i = 1; i < text.size() - 1; ++i)
     {
         REQUIRE(lce_ds(pf_sa(i), pf_sa(i + 1)) == lcp[i + 1]);
     }
     spdlog::info("Test LCE ds");
-    
 }
 
 TEST_CASE( "pfp<uint8_t> RA to yeast", "PFP on yeast.fasta" )
 {
     std::vector<uint8_t> yeast;
     read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
-    
+
     pfpds::long_type w = 10;
     std::less<uint8_t> lex_comp;
     pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", w, lex_comp);
@@ -264,7 +283,7 @@ TEST_CASE( "pfp<uint32_t> RA to yeast", "PFP on yeast.fasta.parse" )
 {
     std::vector<uint32_t> yeast_parse;
     pfpds::read_file(std::string(testfiles_dir + "/yeast.fasta.parse").c_str(), yeast_parse);
-    
+
     pfpds::long_type w = 5;
     std::less<uint32_t> int_comp;
     pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
@@ -314,7 +333,8 @@ TEST_CASE( "parse<uint8_t> DS for yeast", "P on yeast.fasta" )
     pfpds::long_type w = 10;
     std::less<uint8_t> lex_comp;
 
-    pfpds::parse parse(testfiles_dir + "/yeast.fasta", 2245 + 1, true, true, true, true);
+    pfpds::dictionary<uint8_t> dict(testfiles_dir + "/yeast.fasta", w, lex_comp);
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta", dict.n_phrases() + 1, true, true, true, true);
 
     // Check data structures
     std::vector<pfpds::long_type> sa_p, isa_p;
@@ -322,7 +342,7 @@ TEST_CASE( "parse<uint8_t> DS for yeast", "P on yeast.fasta" )
     sa_p.resize(parse.p.size());
     isa_p.resize(parse.p.size());
     lcp_p.resize(parse.p.size());
-    sacak_int(&(parse.p[0]), &sa_p[0], parse.p.size(), 2245 + 1);
+    sacak_int(&(parse.p[0]), &sa_p[0], parse.p.size(), dict.n_phrases() + 1);
 
     for (pfpds::long_type i = 0; i < sa_p.size(); i++) { isa_p[sa_p[i]] = i; }
     pfpds::LCP_array(&parse.p[0], isa_p, sa_p, parse.p.size(), lcp_p);
@@ -345,11 +365,11 @@ TEST_CASE( "pf_parsing<uint8_t> DS for yeast", "PFP on yeast.fasta" )
     // Create pfp
     pfpds::long_type w = 10;
     std::less<uint8_t> lex_comp;
-    
+
     pfpds::dictionary<uint8_t> dict(testfiles_dir + "/yeast.fasta", w, lex_comp);
     pfpds::parse parse(testfiles_dir + "/yeast.fasta", dict.n_phrases() + 1, true, true, true, true);
     pfpds::pf_parsing<uint8_t> pfp(dict, parse, true, true);
-    
+
     // Check data structures dictionary
     std::vector<pfpds::long_type> da_d, sa_d;
     std::vector<pfpds::long_signed_type> lcp_d;
@@ -357,84 +377,47 @@ TEST_CASE( "pf_parsing<uint8_t> DS for yeast", "PFP on yeast.fasta" )
     lcp_d.resize(dict.d.size());
     da_d.resize(dict.d.size());
     gsacak(&(dict.d[0]), &sa_d[0], &lcp_d[0], &da_d[0], dict.d.size());
-    
+
     bool all_good = true;
     for (pfpds::long_type i = 0; i < sa_d.size(); i++) { all_good = all_good and (dict.saD[i] == sa_d[i]); }
     REQUIRE(all_good);
-    
+
     all_good = true;
     for (pfpds::long_type i = 0; i < da_d.size(); i++) { all_good = all_good and (dict.daD[i] == da_d[i]); }
     REQUIRE(all_good);
-    
+
     all_good = true;
     for (pfpds::long_type i = 0; i < lcp_d.size(); i++) { all_good = all_good and (dict.lcpD[i] == lcp_d[i]); }
     REQUIRE(all_good);
-    
+
     // Check data structures parse
     std::vector<pfpds::long_type> sa_p, isa_p;
     std::vector<pfpds::long_signed_type> lcp_p;
     sa_p.resize(parse.p.size());
     isa_p.resize(parse.p.size());
     lcp_p.resize(parse.p.size());
-    sacak_int(&(parse.p[0]), &sa_p[0], parse.p.size(), 2245 + 1);
-    
+    sacak_int(&(parse.p[0]), &sa_p[0], parse.p.size(), dict.n_phrases() + 1);
+
     for (pfpds::long_type i = 0; i < sa_p.size(); i++) { isa_p[sa_p[i]] = i; }
     pfpds::LCP_array(&parse.p[0], isa_p, sa_p, parse.p.size(), lcp_p);
-    
+
     all_good = true;
     for (pfpds::long_type i = 0; i < sa_p.size(); i++) { all_good = all_good and (parse.saP[i] == sa_p[i]); }
     REQUIRE(all_good);
-    
+
     all_good = true;
     for (pfpds::long_type i = 0; i < isa_p.size(); i++) { all_good = all_good and (parse.isaP[i] == isa_p[i]); }
     REQUIRE(all_good);
-    
+
     all_good = true;
     for (pfpds::long_type i = 0; i < lcp_p.size(); i++) { all_good = all_good and (parse.lcpP[i] == lcp_p[i]); }
     REQUIRE(all_good);
 }
 
-
-TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
-{
-    pfpds::long_type w = 10;
-
-    std::vector<uint8_t> yeast;
-    read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
-    yeast.insert(yeast.begin(), w - 1, 3);
-    yeast.insert(yeast.end(), w - 1, 5);
-    yeast.push_back(4);
-    yeast.push_back(0);
-
-    std::vector<pfpds::long_type> yeast_sa(yeast.size(), 0);
-    sacak(&yeast[0], &yeast_sa[0], yeast.size());
-    
-    std::less<uint8_t> lex_comp;
-    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", w, lex_comp);
-    pfpds::parse parse(testfiles_dir + "/yeast.fasta", dictionary.n_phrases() + 1);
-    pfpds::pf_parsing<uint8_t> pfp(dictionary, parse, true, true);
-    pfpds::pfp_sa_support<uint8_t> sa_support(pfp);
-    
-    std::vector<pfpds::long_type> sa_support_array;
-    for (pfpds::long_type i = 0; i < sa_support.size(); ++i) { sa_support_array.push_back(sa_support(i)); }
-    
-    bool all_good = true;
-    for (pfpds::long_type i = 0; i < yeast.size(); ++i)
-    {
-        all_good = all_good and (sa_support(i) == ((yeast_sa[i] + (yeast.size()) - w + 1) % (yeast.size())));
-        if (not all_good)
-        {
-            pfpds::long_type sa_v = sa_support(i);
-            break;
-        }
-    }
-     REQUIRE(all_good);
-}
-
 TEST_CASE( "pfp<uint32_t> SA for yeast's parse", "PFP on yeast.fasta.parse" )
 {
     pfpds::long_type w = 5;
-    
+
     std::less<uint32_t> int_comp;
     pfpds::dictionary<uint32_t> dictionary(testfiles_dir + "/yeast.fasta.parse", w, int_comp);
     pfpds::parse parse(testfiles_dir + "/yeast.fasta.parse", dictionary.n_phrases() + 1);
@@ -543,6 +526,49 @@ TEST_CASE( "pfp<uint8_t> from example", "[small]" )
         auto phrase_rank = pfp.w_wt.rank(b_it, phrase);
         REQUIRE(pfp.bwt_p_ilist[phrase][phrase_rank] == b_it);
     }
+}
+
+TEST_CASE( "pfp<uint8_t> SA for yeast", "PFP on yeast.fasta" )
+{
+    pfpds::long_type w = 10;
+
+    std::less<uint8_t> lex_comp;
+    pfpds::dictionary<uint8_t> dictionary(testfiles_dir + "/yeast.fasta", w, lex_comp);
+    pfpds::parse parse(testfiles_dir + "/yeast.fasta", dictionary.n_phrases() + 1);
+    pfpds::pf_parsing<uint8_t> pfp(dictionary, parse, true, true);
+    pfpds::pfp_sa_support<uint8_t> sa_support(pfp);
+
+    std::vector<uint8_t> yeast;
+    read_fasta_file(std::string(testfiles_dir + "/yeast.fasta").c_str(), yeast);
+    yeast.insert(yeast.end(), w, '\2'); // Dollars
+
+    std::vector<pfpds::long_type> sa(yeast.size(), 0);
+    std::iota(sa.begin(), sa.end(), 0);
+    auto cyclic_sort = [&](const pfpds::long_type a, const pfpds::long_type b)
+    {
+        const auto max_cmp = yeast.size();
+        for (pfpds::long_type i = 0; i < max_cmp; ++i)
+        {
+            if (yeast[(a + i) % yeast.size()] != yeast[(b + i) % yeast.size()])
+            {
+                return yeast[(a + i) % yeast.size()] < yeast[(b + i) % yeast.size()];
+            }
+        }
+        return false; // suppress return warning
+    };
+    std::sort(sa.begin(), sa.end(), cyclic_sort);
+
+    bool all_good = true;
+    for (pfpds::long_type i = 0; i < yeast.size(); ++i)
+    {
+        all_good = sa_support(i) == sa[i];
+        if (not all_good)
+        {
+            pfpds::long_type sa_v = sa_support(i);
+            break;
+        }
+    }
+    REQUIRE(all_good);
 }
 
 //------------------------------------------------------------------------------
